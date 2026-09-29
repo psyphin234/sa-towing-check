@@ -98,7 +98,7 @@
       category: "definition",
       title: "Goods vehicle",
       summary:
-        "A motor vehicle (not a motor cycle, tricycle, motor car, minibus or bus) designed or adapted to carry goods on a public road. All bakkies/LDVs are goods vehicles, not only heavy ones.",
+        "A motor vehicle (not a motor cycle, tricycle, motor car, minibus or bus) designed or adapted to carry goods on a public road. Most bakkies are registered as light delivery vehicles (goods vehicles), and many double cabs are too, but your registration papers decide.",
       regulation: "National Road Traffic Act 93 of 1996, s1",
       sourceUrl: SRC.ddyn.url,
       sourceLabel: SRC.ddyn.label,
@@ -122,7 +122,7 @@
       category: "definition",
       title: "Vehicle type comes from the registration papers",
       summary:
-        "Whether your vehicle is a motor car or a goods vehicle is what its registration certificate / licence disc says, not its body shape. Double cabs are the usual point of confusion: check your papers.",
+        "Whether your vehicle is a motor car or a goods vehicle is what its registration certificate / licence disc says, not its body shape. A double cab can be either: it carries up to five people and has a load bed, so check your papers.",
       regulation: "National Road Traffic Act 93 of 1996, s1",
       sourceUrl: SRC.ddyn.url,
       sourceLabel: SRC.ddyn.label,
@@ -521,6 +521,7 @@
       text: "Check every rule against the official gazetted National Road Traffic Regulations (as amended) and cite the Government Notice number.",
       ruleIds: [],
     },
+    { text: "How are double cab bakkies registered: always as goods vehicles (LDVs), or can one be a motor car?", ruleIds: ["def-goods-vehicle", "def-vehicle-type-from-papers"] },
     { text: "Does reg 151 use the trailer's plated GVM rather than what it actually weighs?", ruleIds: ["reg151-plated-gvm"] },
     { text: "Does reg 239(1) leave out motor cars (so overloading an SUV is not that offence)?", ruleIds: ["reg239-motor-car-exclusion"] },
     { text: "Exact wording of reg 239(1): does it cover GVM, each gross axle massload and GCM?", ruleIds: ["reg239-overloading"] },
