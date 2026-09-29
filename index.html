@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SA Towing Check | PsyPhin</title>
+  <meta name="description" content="Check whether your South African tow rig is legal: licence code, trailer brakes vs tare, and speed limit, with a citation for every rule.">
+  <meta name="theme-color" content="#020203">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="back-link" href="https://psyphin.co.za/">&larr; psyphin.co.za</a>
+      <nav class="nav" aria-label="Site">
+        <a href="index.html" aria-current="page">Checker</a>
+        <a href="sources.html">Sources</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <section class="intro">
+      <h1>SA Towing Check</h1>
+      <p class="lede">Is your car or bakkie plus trailer legal on South African roads? Enter what's on your licence disc and the trailer's plate to check your licence code, trailer brakes and speed limit. Every rule links to its source.</p>
+      <p class="privacy">Everything is worked out in your browser. Nothing you enter is sent anywhere.</p>
+    </section>
+
+    <div class="layout">
+      <form id="rig-form" class="inputs" autocomplete="off" novalidate>
+        <fieldset>
+          <legend>Tow vehicle</legend>
+
+          <div class="field">
+            <span class="label" id="vehicle-type-label">Vehicle type (as registered)</span>
+            <div class="choice" role="radiogroup" aria-labelledby="vehicle-type-label">
+              <label><input type="radio" name="vehicleType" value="goodsVehicle"><span>Goods vehicle <small>bakkie / LDV</small></span></label>
+              <label><input type="radio" name="vehicleType" value="motorCar"><span>Motor car <small>sedan / SUV</small></span></label>
+            </div>
+            <details class="help" data-rule-help="def-vehicle-type-from-papers">
+              <summary>Which one is my vehicle?</summary>
+              <div class="help-body"></div>
+            </details>
+          </div>
+
+          <div class="field">
+            <label for="tareKg">Tare</label>
+            <div class="unit-input"><input id="tareKg" name="tareKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2100"><span>kg</span></div>
+            <p class="hint">Printed on your licence disc and registration certificate.</p>
+          </div>
+
+          <div class="field">
+            <label for="gvmKg">GVM</label>
+            <div class="unit-input"><input id="gvmKg" name="gvmKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 3100"><span>kg</span></div>
+            <p class="hint">Maximum laden mass from the manufacturer: compliance plate or owner's manual.</p>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Driver</legend>
+          <div class="field">
+            <label for="licenceCode">Licence code</label>
+            <select id="licenceCode" name="licenceCode">
+              <option value="">Not sure / show me what I need</option>
+              <option value="B">B</option>
+              <option value="EB">EB</option>
+              <option value="C1">C1</option>
+              <option value="EC1">EC1</option>
+              <option value="C">C</option>
+              <option value="EC">EC</option>
+            </select>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Trailer</legend>
+          <div class="field">
+            <label for="trailerCount">Number of trailers</label>
+            <select id="trailerCount" name="trailerCount">
+              <option value="0">None</option>
+              <option value="1" selected>One</option>
+              <option value="2">Two</option>
+            </select>
+          </div>
+
+          <div class="field" data-trailer="1">
+            <label for="trailer1GvmKg">Trailer plated GVM</label>
+            <div class="unit-input"><input id="trailer1GvmKg" name="trailer1GvmKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2000"><span>kg</span></div>
+            <p class="hint">From the trailer's licence disc or compliance plate, not what it weighs today.</p>
+          </div>
+
+          <div class="field" data-trailer="2" hidden>
+            <label for="trailer2GvmKg">Second trailer plated GVM</label>
+            <div class="unit-input"><input id="trailer2GvmKg" name="trailer2GvmKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+          </div>
+
+          <div class="field" data-trailer="1">
+            <label for="trailerBrake">Trailer brakes</label>
+            <select id="trailerBrake" name="trailerBrake">
+              <option value="">Choose…</option>
+              <option value="none">None (parking brake only)</option>
+              <option value="overrun">Overrun brake (typical caravan)</option>
+              <option value="service">Service brake (driver-operated from the cab)</option>
+            </select>
+            <p class="hint" data-trailer="2" hidden>With two trailers, choose the weaker brakes of the two.</p>
+            <details class="help" data-rule-help="def-overrun-service-brake">
+              <summary>Overrun or service brake?</summary>
+              <div class="help-body"></div>
+            </details>
+          </div>
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="button" id="load-example" class="button button--ghost">Load worked example</button>
+          <button type="reset" class="button button--ghost">Clear</button>
+        </div>
+      </form>
+
+      <section class="results" aria-labelledby="results-title">
+        <h2 id="results-title" class="visually-hidden">Results</h2>
+        <div id="overall" class="overall" role="status" aria-live="polite"></div>
+
+        <section class="panel panel--legal" aria-labelledby="legal-title">
+          <h2 id="legal-title">Legal requirements <span class="panel-tag">Law</span></h2>
+          <ul id="legal-checks" class="checks"></ul>
+        </section>
+
+        <section class="panel panel--maker" aria-labelledby="maker-title">
+          <h2 id="maker-title">Manufacturer ratings <span class="panel-tag">Not law</span></h2>
+          <p class="muted">Payload, GCM and tow ball checks are coming next. These are the vehicle maker's limits, which your insurer also relies on.</p>
+        </section>
+
+        <aside class="disclaimer">
+          <strong>Guidance only, not legal advice.</strong>
+          Weigh your rig on a weighbridge, and confirm with your DLTC or traffic authority before you rely on these results.
+          Rules marked <span class="badge badge--unverified">Unverified</span> have not yet been checked against the official gazetted regulations.
+        </aside>
+
+        <section class="explainers" aria-label="Explainers">
+          <details id="why-not-rated" class="explainer"></details>
+          <details id="eb-myth" class="explainer"></details>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Guidance only, not legal advice. <a href="sources.html">Sources and verification status</a>.</p>
+      <p>&copy; <span id="year"></span> PsyPhin</p>
+    </div>
+  </footer>
+
+  <script src="js/rules.js"></script>
+  <script src="js/checks.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

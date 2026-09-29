@@ -1,0 +1,284 @@
+/*
+ * checks.js: legal checks (SPEC §4.1–4.3). Pure functions, no DOM.
+ *
+ * Every threshold comes from rules.js params. Each check returns:
+ *   { id, title, status, reason, notes: [], ruleIds: [] }
+ * status is one of:
+ *   "pass"        legal as entered (green)
+ *   "warn"        legal, but with a restriction or something you must do (amber)
+ *   "fail"        not legal as entered (red)
+ *   "info"        nothing to pass or fail, just what applies (blue)
+ *   "incomplete"  inputs missing (grey)
+ *
+ * Input shape (masses in kg; null/undefined = not entered):
+ *   {
+ *     vehicleType: "motorCar" | "goodsVehicle" | "",
+ *     tareKg, gvmKg,
+ *     licenceCode: "B" | "EB" | "C1" | "EC1" | "C" | "EC" | "",
+ *     trailers: [{ gvmKg }],            // 0, 1 or 2 trailers
+ *     trailerBrake: "none" | "overrun" | "service"
+ *   }
+ */
+(function (root) {
+  "use strict";
+
+  const R =
+    typeof module !== "undefined" && module.exports ? require("./rules.js") : root.TOWING_RULES;
+
+  // "2100" -> "2 100 kg" (SA style: space as thousands separator)
+  function kg(n) {
+    return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " kg";
+  }
+
+  function isNum(v) {
+    return typeof v === "number" && isFinite(v) && v > 0;
+  }
+
+  function trailerSum(input) {
+    const trailers = input.trailers || [];
+    if (!trailers.length) return { count: 0, sumKg: 0, complete: true };
+    const complete = trailers.every((t) => isNum(t.gvmKg));
+    const sumKg = trailers.reduce((s, t) => s + (isNum(t.gvmKg) ? t.gvmKg : 0), 0);
+    return { count: trailers.length, sumKg, complete };
+  }
+
+  function vehicleTypeLabel(type) {
+    return type === "motorCar" ? "motor car" : "goods vehicle";
+  }
+
+  function result(id, title, status, reason, ruleIds, notes) {
+    return { id, title, status, reason, ruleIds, notes: notes || [] };
+  }
+
+  // ------------------------------------------------------------------ §4.1 licence code (reg 99)
+  function licenceCheck(input) {
+    const rule = R.get("reg99-licence-codes");
+    const p = rule.params;
+    const ids = ["reg99-licence-codes"];
+    const title = "Driving licence code";
+    const t = trailerSum(input);
+
+    if (!input.vehicleType) {
+      return result("licence", title, "incomplete", "Choose the vehicle type from your registration papers.", ids);
+    }
+    const byTare = input.vehicleType === "motorCar";
+    const basisKg = byTare ? input.tareKg : input.gvmKg;
+    const basisName = byTare ? "tare" : "GVM";
+    if (!isNum(basisKg)) {
+      return result(
+        "licence",
+        title,
+        "incomplete",
+        `Enter the vehicle's ${basisName}: a ${vehicleTypeLabel(input.vehicleType)} is classed by its ${basisName}.`,
+        ids
+      );
+    }
+    if (!t.complete) {
+      return result("licence", title, "incomplete", "Enter the trailer's plated GVM.", ids);
+    }
+
+    const vehicleClass =
+      basisKg <= p.lightVehicleMaxKg ? "B" : basisKg <= p.mediumVehicleMaxKg ? "C1" : "C";
+    const heavyTrailer = t.sumKg > p.lightTrailerMaxKg;
+    const required = p.requiredCode[vehicleClass][heavyTrailer ? "heavy" : "light"];
+
+    const notes = [];
+    const why =
+      `Your ${vehicleTypeLabel(input.vehicleType)} is classed by its ${basisName} (${kg(basisKg)}, ` +
+      (vehicleClass === "B"
+        ? `up to ${kg(p.lightVehicleMaxKg)})`
+        : vehicleClass === "C1"
+        ? `over ${kg(p.lightVehicleMaxKg)}, up to ${kg(p.mediumVehicleMaxKg)})`
+        : `over ${kg(p.mediumVehicleMaxKg)})`) +
+      (t.count === 0
+        ? ", with no trailer."
+        : `, with a trailer GVM ${t.count > 1 ? "total " : ""}of ${kg(t.sumKg)} (${
+            heavyTrailer ? "over" : "up to"
+          } ${kg(p.lightTrailerMaxKg)}).`);
+
+    if (!byTare && vehicleClass !== "B" && isNum(input.tareKg) && input.tareKg <= p.lightVehicleMaxKg) {
+      notes.push(
+        `Goods vehicles are classed by GVM, not tare, so this vehicle needs ${required} even though its tare is under ${kg(p.lightVehicleMaxKg)}.`
+      );
+      ids.push("reg99-eb-articulated-myth");
+    }
+    if (p.outOfScopeCodes.indexOf(required) !== -1) {
+      notes.push(`Code ${required} vehicles are outside what this tool checks in detail.`);
+    }
+    if (t.count > 1) notes.push(rule.notes[0]);
+
+    if (!input.licenceCode) {
+      return result("licence", title, "info", `You need code ${required}. ${why}`, ids, notes);
+    }
+    const covered = (p.includes[input.licenceCode] || []).indexOf(required) !== -1;
+    if (covered) {
+      return result(
+        "licence",
+        title,
+        "pass",
+        `Your code ${input.licenceCode} covers this (needs ${required}). ${why}`,
+        ids,
+        notes
+      );
+    }
+    return result(
+      "licence",
+      title,
+      "fail",
+      `This needs code ${required}; code ${input.licenceCode} only covers ${p.includes[input.licenceCode].join(", ")}. ${why}`,
+      ids,
+      notes
+    );
+  }
+
+  // ------------------------------------------------------------------ §4.2 trailer brakes (reg 151)
+  // Pure rule: which brake level does a trailer GVM (sum) need behind this tare?
+  function requiredBrake(trailerGvmKg, tareKg) {
+    const p = R.get("reg151-trailer-brakes").params;
+    if (trailerGvmKg > p.heavyTrailerMinKg) return { level: "service", clause: p.clauses.overHeavy };
+    if (trailerGvmKg > tareKg) return { level: "service", clause: p.clauses.overTare };
+    if (trailerGvmKg > p.lightTrailerMaxKg) return { level: "overrun", clause: p.clauses.heavyUpToTare };
+    if (trailerGvmKg > tareKg * p.unbrakedTareFraction)
+      return { level: "overrun", clause: p.clauses.lightOverTareHalf };
+    return { level: "none", clause: p.clauses.parkingOnly };
+  }
+
+  // Largest legal trailer GVM (sum) for each brake type behind this tare.
+  function maxTrailerByBrake(tareKg) {
+    const p = R.get("reg151-trailer-brakes").params;
+    return {
+      none: Math.min(p.lightTrailerMaxKg, tareKg * p.unbrakedTareFraction),
+      overrun: Math.min(tareKg, p.heavyTrailerMinKg),
+      service: null, // no reg 151 cap; licence, manufacturer and other limits still apply
+    };
+  }
+
+  const BRAKE_TEXT = {
+    none: "no brakes (parking brake only)",
+    overrun: "an overrun or service brake",
+    service: "a service brake the driver can operate from the tow vehicle",
+  };
+  const BRAKE_FITTED_TEXT = { none: "no brakes", overrun: "overrun brakes", service: "a service brake" };
+
+  function brakeCheck(input) {
+    const rule = R.get("reg151-trailer-brakes");
+    const p = rule.params;
+    const ids = ["reg151-trailer-brakes", "reg151-plated-gvm"];
+    const title = "Trailer brakes vs tow vehicle tare";
+    const t = trailerSum(input);
+
+    if (t.count === 0) return result("brakes", title, "info", "No trailer entered.", ids.slice(0, 1));
+    if (!isNum(input.tareKg))
+      return result("brakes", title, "incomplete", "Enter the tow vehicle's tare (from the licence disc).", ids);
+    if (!t.complete) return result("brakes", title, "incomplete", "Enter the trailer's plated GVM.", ids);
+    if (!input.trailerBrake)
+      return result("brakes", title, "incomplete", "Choose the trailer's brake type.", ids);
+
+    const need = requiredBrake(t.sumKg, input.tareKg);
+    const max = maxTrailerByBrake(input.tareKg);
+    const gvmText = `Trailer GVM ${t.count > 1 ? "total " : ""}${kg(t.sumKg)}`;
+    const reason =
+      `${gvmText} behind a tare of ${kg(input.tareKg)} needs ${BRAKE_TEXT[need.level]} (reg ${need.clause}).`;
+
+    const notes = [
+      `Limits for your tare: no brakes up to ${kg(max.none)}; overrun brakes up to ${kg(max.overrun)}; above that a service brake is required.`,
+      rule.notes[0],
+    ];
+    if (t.count > 1) notes.push(rule.notes[1]);
+    if (need.level === "service" && input.trailerBrake === "overrun")
+      ids.push("def-overrun-service-brake");
+
+    const ok = p.brakeLevels[input.trailerBrake] >= p.brakeLevels[need.level];
+    return result(
+      "brakes",
+      title,
+      ok ? "pass" : "fail",
+      ok
+        ? `${reason} ${capitalise(BRAKE_FITTED_TEXT[input.trailerBrake])}: legal.`
+        : `${reason} It has ${BRAKE_FITTED_TEXT[input.trailerBrake]}: not legal.`,
+      ids,
+      notes
+    );
+  }
+
+  function capitalise(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // ------------------------------------------------------------------ §4.3 speed limit (reg 292/293)
+  function speedCheck(input) {
+    const general = R.get("reg292-general-speed").params;
+    const p = R.get("reg293-goods-towing-speed").params;
+    const title = "Speed limit";
+    const t = trailerSum(input);
+    const generalText = `General limits apply: ${general.urbanKmh} km/h urban, ${general.ruralKmh} km/h rural, ${general.freewayKmh} km/h freeway.`;
+
+    if (!input.vehicleType)
+      return result("speed", title, "incomplete", "Choose the vehicle type from your registration papers.", [
+        "reg293-goods-towing-speed",
+      ]);
+    if (t.count === 0)
+      return result("speed", title, "info", `No trailer entered. ${generalText}`, ["reg292-general-speed"]);
+    if (input.vehicleType === "motorCar") {
+      return result(
+        "speed",
+        title,
+        "info",
+        `The reg 293 towing limit applies to goods vehicles only, not to a motor car. ${generalText}`,
+        ["reg293-goods-towing-speed", "reg292-general-speed", "def-motor-car"]
+      );
+    }
+
+    const ids = ["reg293-goods-towing-speed"];
+    if (!isNum(input.gvmKg))
+      return result("speed", title, "incomplete", "Enter the vehicle's GVM.", ids);
+    if (!t.complete) return result("speed", title, "incomplete", "Enter the trailer's plated GVM.", ids);
+    if (t.count > p.maxTrailers)
+      return result("speed", title, "info", `More than ${p.maxTrailers} trailers is outside what this tool checks.`, ids);
+
+    const combined = input.gvmKg + t.sumKg;
+    const sumText = `Vehicle GVM ${kg(input.gvmKg)} + trailer GVM ${kg(t.sumKg)} = ${kg(combined)}`;
+    if (combined > p.combinedGvmHeavyOverKg) {
+      return result(
+        "speed",
+        title,
+        "warn",
+        `Maximum ${p.heavyLimitKmh} km/h. ${sumText}, over ${kg(p.combinedGvmHeavyOverKg)} (reg ${p.clauses.heavy}).`,
+        ids,
+        ["Speed-limit sign requirements for this class are not covered yet; confirm with your DLTC."]
+      );
+    }
+    if (combined > p.combinedGvmOverKg) {
+      return result(
+        "speed",
+        title,
+        "warn",
+        `Maximum ${p.limitKmh} km/h, and a ${p.limitKmh} km/h sign must be displayed on the rear. ${sumText}, over ${kg(p.combinedGvmOverKg)} (reg ${p.clauses.limit}).`,
+        ids.concat("reg293-speed-sign")
+      );
+    }
+    return result(
+      "speed",
+      title,
+      "info",
+      `${sumText}, not over ${kg(p.combinedGvmOverKg)}, so the reg 293 towing limit does not apply. ${generalText}`,
+      ids.concat("reg292-general-speed")
+    );
+  }
+
+  // ------------------------------------------------------------------ all checks
+  const STATUS_RANK = { fail: 4, incomplete: 3, warn: 2, info: 1, pass: 0 };
+
+  function runLegalChecks(input) {
+    const checks = [licenceCheck(input), brakeCheck(input), speedCheck(input)];
+    const overall = checks.reduce(
+      (worst, c) => (STATUS_RANK[c.status] > STATUS_RANK[worst] ? c.status : worst),
+      "pass"
+    );
+    return { checks, overall };
+  }
+
+  const api = { runLegalChecks, licenceCheck, brakeCheck, speedCheck, requiredBrake, maxTrailerByBrake, kg };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.TOWING_CHECKS = api;
+})(typeof window !== "undefined" ? window : globalThis);
