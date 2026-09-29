@@ -31,7 +31,7 @@ tests/run.ps1       Runs the tests in headless Edge: powershell -ExecutionPolicy
 - **Every threshold lives in `rules.js`** (in a rule's `params`), next to its citation. `checks.js`, `app.js` and HTML must not hard-code legal numbers.
 - Every legal result cites its rule(s) via `ruleIds`; the UI renders each as regulation + source link + verified badge.
 - `verified: false` rules show "Unverified: confirm with DLTC". As of 2026-09-29 **all** rules are unverified: every source is secondary.
-- Legal checks (blue "Law" panel) are kept separate from manufacturer ratings (purple "Not law" panel).
+- Legal checks (blue "SA law" tag) are kept separate from manufacturer limits (purple "Vehicle maker" / "Manufacturer" tag). Wording: say "SA law" and "manufacturer limit"; avoid "not legal" for manufacturer limits, because NOT LEGAL is the red status for breaking a rule.
 - The disclaimer stays on every results view.
 
 ## Verifying a rule

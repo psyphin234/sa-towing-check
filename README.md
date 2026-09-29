@@ -6,7 +6,7 @@ Is your car or bakkie plus trailer legal on South African roads? This static web
 - **Trailer brakes vs tow vehicle tare** (reg 151)
 - **Speed limit and 100 km/h sign** for goods vehicles towing (reg 292/293)
 - **Overloading and the driving axle ratio** for goods vehicles (reg 239)
-- **Manufacturer ratings** (not law): payload, GCM, towing capacity, tow ball mass, trailer GVM and axle loads, and the heaviest trailer your rig may tow
+- **Manufacturer limits** (set by the vehicle maker, not SA law): payload, GCM, towing capacity, tow ball mass, trailer GVM and axle loads, and the heaviest trailer your rig may tow
 
 Two more modes: **What can I tow?** (the heaviest trailer for each type of brakes, from your vehicle and licence code) and **Car vs bakkie** (how the rules change when the same vehicle is registered as a motor car or a goods vehicle).
 

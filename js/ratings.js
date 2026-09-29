@@ -177,7 +177,7 @@
       const ratio = m.towballKg / m.trailer.kg;
       const inRange = ratio >= g.minFraction && ratio <= g.maxFraction;
       parts.push(
-        `That is ${(ratio * 100).toFixed(1)} % of the trailer's ${kg(m.trailer.kg)}; the rule of thumb is ${Math.round(g.minFraction * 100)}–${Math.round(g.maxFraction * 100)} % (guidance, not law).`
+        `That is ${(ratio * 100).toFixed(1)} % of the trailer's ${kg(m.trailer.kg)}; the rule of thumb is ${Math.round(g.minFraction * 100)}–${Math.round(g.maxFraction * 100)} % (a rule of thumb, not a legal limit).`
       );
       if (!inRange) {
         if (status === "pass") status = "warn";

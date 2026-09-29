@@ -457,7 +457,7 @@
       category: "guidance",
       title: "Tow ball (nose) mass",
       summary:
-        "Rule of thumb: tow ball mass of 7–10 % of the trailer's actual mass, and never more than the vehicle manufacturer's maximum. This is guidance, not law.",
+        "Rule of thumb: tow ball mass of 7–10 % of the trailer's actual mass, and never more than the vehicle manufacturer's maximum. This is a rule of thumb, not a legal limit.",
       regulation: "Guidance only (no legal limit found yet)",
       sourceUrl: SRC.carmag.url,
       sourceLabel: SRC.carmag.label,

@@ -215,7 +215,7 @@
         el(
           "td",
           null,
-          el("span", { class: "kind kind--" + c.category }, c.category === "legal" ? "Law" : "Not law")
+          el("span", { class: "kind kind--" + c.category }, c.category === "legal" ? "SA law" : "Manufacturer")
         )
       )
     );
@@ -272,7 +272,7 @@
       { class: limit.binding ? "is-binding" : null },
       el("span", { class: "tow-line-label" }, limit.label, limit.binding ? el("span", { class: "visually-hidden" }, " (the tighter limit)") : null),
       el("span", { class: "tow-line-kg" }, C.kg(limit.kg)),
-      el("span", { class: "kind kind--" + category }, category === "legal" ? "Law" : "Not law")
+      el("span", { class: "kind kind--" + category }, category === "legal" ? "SA law" : "Manufacturer")
     );
   }
 

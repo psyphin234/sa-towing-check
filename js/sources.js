@@ -10,10 +10,10 @@
   const { el, externalLink, verifiedBadge, formatDate } = window.TOWING_UI;
 
   const GROUPS = [
-    { category: "legal", title: "Legal requirements (law)", anchor: "legal" },
-    { category: "definition", title: "Definitions (law)", anchor: "definitions" },
-    { category: "manufacturer", title: "Manufacturer ratings (not law)", anchor: "manufacturer" },
-    { category: "guidance", title: "Guidance (not law)", anchor: "guidance" },
+    { category: "legal", title: "Legal requirements (SA law)", anchor: "legal" },
+    { category: "definition", title: "Definitions (SA law)", anchor: "definitions" },
+    { category: "manufacturer", title: "Manufacturer limits (set by the vehicle maker)", anchor: "manufacturer" },
+    { category: "guidance", title: "Guidance (rules of thumb, not legal limits)", anchor: "guidance" },
   ];
 
   function sourceLine(label, url) {
