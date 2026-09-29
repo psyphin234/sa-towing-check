@@ -50,9 +50,11 @@
   }
 
   // One-line citation: regulation (linked to source) + badge. Definitions
-  // share a regulation (s1), so they also name the term.
-  function citation(rule) {
-    const text = rule.category === "definition" ? `${rule.regulation}: ${rule.title}` : rule.regulation;
+  // share a regulation (s1), so they also name the term; withTitle names the
+  // rule too (for mixed source lists, where several rules share a regulation).
+  function citation(rule, withTitle) {
+    const text =
+      rule.category === "definition" || withTitle === true ? `${rule.regulation}: ${rule.title}` : rule.regulation;
     return el(
       "li",
       { class: "cite" },

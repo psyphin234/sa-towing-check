@@ -430,6 +430,94 @@
     );
   });
 
+  // ------------------------------------------------------------ What can I tow?
+  const MD = window.TOWING_MODES;
+  const row = (t, brake) => t.rows.find((r) => r.brake === brake);
+
+  test("tow: bakkie tare 2 100 kg, no licence chosen", () => {
+    const t = MD.whatCanITow(bakkie({ tareKg: 2100, gvmKg: 3100 }));
+    eq(t.ready, true);
+    eq(row(t, "none").legalMaxKg, 750, "unbraked");
+    includes(row(t, "none").legal[0].label, "up to 750");
+    eq(row(t, "overrun").legalMaxKg, 2100, "overrun = tare");
+    eq(row(t, "service").legalMaxKg, null, "service: no reg 151 cap");
+    eq(row(t, "none").codeNeeded, "B");
+    eq(row(t, "overrun").codeNeeded, "EB");
+    eq(t.speed.limitOverKg, 400, "100 km/h from trailer GVM over 400 kg");
+    eq(t.speed.heavyOverKg, 5900);
+  });
+  test("tow: light car, unbraked limit is half the tare", () => {
+    const t = MD.whatCanITow(car({ tareKg: 1200 }));
+    eq(row(t, "none").legalMaxKg, 600);
+    includes(row(t, "none").legal[0].label, "half your tare");
+    eq(t.speed.applies, false, "motor car: no reg 293 towing limit");
+  });
+  test("tow: code B caps every row at 750 kg", () => {
+    const t = MD.whatCanITow(bakkie({ tareKg: 2100, gvmKg: 3100, licenceCode: "B" }));
+    eq(row(t, "overrun").legalMaxKg, 750);
+    eq(row(t, "service").legalMaxKg, 750);
+    eq(row(t, "overrun").legal.find((l) => l.binding).ruleId, "reg99-licence-codes");
+  });
+  test("tow: manufacturer limits from towing capacity and GCM room", () => {
+    const t = MD.whatCanITow(
+      bakkie({ tareKg: 2100, gvmKg: 3100, gcmKg: 5850, brakedCapacityKg: 3500, unbrakedCapacityKg: 750 })
+    );
+    eq(row(t, "overrun").makerMaxKg, 3500, "braked capacity below GCM room of 3 750");
+    eq(row(t, "none").makerMaxKg, 750);
+    eq(row(t, "service").makerMaxKg, 3500);
+    const loaded = MD.whatCanITow(
+      bakkie({ tareKg: 2100, gvmKg: 3100, gcmKg: 5850, brakedCapacityKg: 3500, loadItems: items([600, 1]) })
+    );
+    eq(row(loaded, "service").makerMaxKg, 3150, "GCM room shrinks with load");
+  });
+  test("tow: heavy goods vehicle needs EC1, any trailer means 100 km/h", () => {
+    const t = MD.whatCanITow(bakkie({ tareKg: 2900, gvmKg: 3600 }));
+    eq(row(t, "overrun").codeNeeded, "EC1");
+    eq(t.speed.limitOverKg, 0);
+  });
+  test("tow: tare over 3 500 kg caps overrun at 3 500 kg (151(1)(c))", () => {
+    const t = MD.whatCanITow(bakkie({ tareKg: 3700, gvmKg: 5000 }));
+    eq(row(t, "overrun").legalMaxKg, 3500);
+    includes(row(t, "overrun").legal[0].label, "151(1)(c)");
+  });
+  test("tow: needs vehicle type, tare and (goods) GVM", () => {
+    eq(MD.whatCanITow({ tareKg: 2000 }).ready, false);
+    eq(MD.whatCanITow(bakkie({})).ready, false);
+    eq(MD.whatCanITow(bakkie({ tareKg: 2000 })).ready, false);
+  });
+
+  // ------------------------------------------------------------ motor car vs goods vehicle
+  const cmp = (o) =>
+    MD.compareBodyTypes(
+      Object.assign({ licenceCode: "EB", trailers: trailer(2500), trailerBrake: "overrun", tareKg: 2100, gvmKg: 3100 }, o)
+    );
+  const cmpRow = (c, id) => c.rows.find((r) => r.id === id);
+
+  test("compare: same rig differs on speed and reg 239, not licence or brakes", () => {
+    const c = cmp({});
+    eq(c.ready, true);
+    eq(cmpRow(c, "licence").same, true, "licence");
+    eq(cmpRow(c, "brakes").same, true, "brakes");
+    eq(cmpRow(c, "speed").same, false, "speed");
+    includes(cmpRow(c, "speed").goods.text, "100 km/h sign");
+    includes(cmpRow(c, "speed").car.text, "General limits");
+    eq(cmpRow(c, "overloading").same, false, "overloading");
+    eq(cmpRow(c, "driving-axle").car.text, "Does not apply");
+    eq(c.differences, 3);
+  });
+  test("compare: GVM over 3 500 kg with tare under changes the licence code", () => {
+    const c = cmp({ tareKg: 2800, gvmKg: 3600 });
+    const lic = cmpRow(c, "licence");
+    eq(lic.same, false);
+    includes(lic.car.text, "EB");
+    includes(lic.goods.text, "EC1");
+    eq(lic.goods.status, "fail", "EB doesn't cover EC1");
+    eq(c.differences, 4);
+  });
+  test("compare: needs tare and GVM", () => {
+    eq(cmp({ gvmKg: null }).ready, false);
+  });
+
   // ------------------------------------------------------------ report
   const failed = results.filter((r) => !r.ok);
   const out = document.getElementById("results");

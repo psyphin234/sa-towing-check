@@ -16,8 +16,9 @@ js/checks.js        Pure legal checks (no DOM): licence (reg 99), brakes (reg 15
                     overloading + driving axle (reg 239), and rigMasses(), the shared mass model
 js/ratings.js       Pure manufacturer checks (not law): payload, GCM, towing capacity, tow ball,
                     trailer GVM, axles, and trailerLimit() ("heaviest trailer" tile)
+js/modes.js         Pure logic for the other two modes: whatCanITow() and compareBodyTypes()
 js/ui.js            Shared DOM helpers: el(), citation(), badges (text via textContent only)
-js/app.js           Wires the checker form to checks.js and renders results
+js/app.js           Wires the form to all of the above, the mode switch and the load list; renders results
 js/sources.js       Builds sources.html from rules.js
 css/style.css       All styles; colours are CSS variables at the top (match psyphin.co.za)
 tests/index.html    Browser test page for rules.js + checks.js
@@ -45,11 +46,19 @@ tests/run.ps1       Runs the tests in headless Edge: powershell -ExecutionPolicy
 - Legal limits (reg 151, licence) apply to the trailer's **plated GVM**; manufacturer limits to its **actual mass**. The heaviest-trailer tile says so.
 - "Close to the limit" (amber) is `settings.nearLimitFraction` in rules.js. Load list presets (`loadPresets`) are rough starting masses, labelled as guesses in the UI.
 
+## Modes
+
+One form, three modes (buttons above the form; the URL hash holds the mode: none/`#check`, `#tow`, `#compare`; `#example` loads the worked example in check mode).
+
+- Elements carry `data-modes="check tow compare"` (any subset); `setMode()` in app.js hides the rest. Inputs keep their values across modes.
+- `[hidden] { display: none !important }` in style.css is what makes hiding work on elements with their own `display` rule. Keep it.
+- **Check my rig**: every legal and manufacturer check. **What can I tow?**: no trailer inputs; one card per brake type with the legal cap (plated GVM) and manufacturer cap (actual mass), plus speed thresholds for goods vehicles. **Car vs bakkie**: no vehicle-type input; runs the legal checks twice (motor car / goods vehicle) and tabulates the differences using each check's `data` field.
+
 ## Build status
 
-Done (brief build steps 1–3): `rules.js` with every rule in the brief, legal checks 4.1–4.4 (licence, brakes, speed, reg 239 overloading and driving axle), manufacturer panel (payload, GCM, towing capacity, tow ball, trailer GVM, axle loads with lever estimate), heaviest-trailer tile, load list builder, weighbridge inputs, sources page, worked-example loader (`index.html#example`), print styles.
+Done (brief build steps 1–4): `rules.js` with every rule in the brief, legal checks 4.1–4.4 (licence, brakes, speed, reg 239 overloading and driving axle), manufacturer panel (payload, GCM, towing capacity, tow ball, trailer GVM, axle loads with lever estimate), heaviest-trailer tile, load list builder, weighbridge inputs, "What can I tow?" and motor car vs goods vehicle modes, sources page, worked-example loader, print styles.
 
-Next (brief step 4 onward): "What can I tow?" mode; motor car vs goods vehicle comparison; rig diagram; print summary; GoatCounter tag (page views only, like the rest of psyphin.co.za) and a `projects.js` card on psyphin.co.za at launch.
+Next (brief step 5 onward): rig diagram (SVG, masses on each axle and the tow ball); printable weighbridge-day summary; then mobile polish, GoatCounter tag (page views only, like the rest of psyphin.co.za), GitHub Pages deploy and a `projects.js` card on psyphin.co.za.
 
 ## Preview and test
 

@@ -32,6 +32,11 @@
   box-sizing: border-box;
 }
 
+/* elements with display rules below must still hide (modes, trailer fields) */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -167,6 +172,68 @@ h3 {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.875rem;
+}
+
+/* ------------------------------------------------------------ modes */
+.modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 20px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-width: 620px;
+}
+
+.mode-button {
+  font: inherit;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.15;
+  min-height: 44px;
+  padding: 6px 8px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.mode-button:hover {
+  color: var(--text);
+}
+
+.mode-button[aria-pressed="true"] {
+  color: #0b0d10;
+  background: var(--accent);
+}
+
+.mode-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.mode-hint {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.jump-link {
+  white-space: nowrap;
+}
+
+.results {
+  scroll-margin-top: 64px; /* clear the sticky header */
+}
+
+@media (min-width: 900px) {
+  .jump-link {
+    display: none;
+  }
 }
 
 /* ------------------------------------------------------------ layout */
@@ -780,6 +847,219 @@ select:focus {
   }
 }
 
+/* ------------------------------------------------------------ What can I tow? */
+.tow-cards {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.tow-card,
+.tow-speed {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--legal);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.tow-card h3,
+.tow-speed h3 {
+  font-size: 1.15rem;
+}
+
+.tow-figure {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.4rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tow-figure--none {
+  font-size: 1.6rem;
+}
+
+.tow-figure-sub {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.tow-lines {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.tow-lines li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 5px 0;
+  border-top: 1px solid var(--border);
+}
+
+.tow-lines li.is-binding {
+  font-weight: 600;
+}
+
+.tow-line-kg {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tow-sentence {
+  margin: 8px 0 0;
+}
+
+.tow-speed {
+  margin-top: 12px;
+}
+
+.tow-speed ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+/* ------------------------------------------------------------ motor car vs goods vehicle */
+.panel--compare {
+  --panel-color: var(--legal);
+}
+
+.compare-summary {
+  --tone: var(--info);
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.compare-table th,
+.compare-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.compare-table thead th {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.compare-table tbody th {
+  font-weight: 600;
+  width: 28%;
+}
+
+.compare-table tr.is-different {
+  background: var(--surface-2);
+}
+
+.compare-table tr.is-different th {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.diff-tag {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.compare-cell {
+  --tone: var(--incomplete);
+}
+
+.compare-cell--pass { --tone: var(--pass); }
+.compare-cell--warn { --tone: var(--warn); }
+.compare-cell--fail { --tone: var(--fail); }
+.compare-cell--info { --tone: var(--info); }
+
+.compare-cell {
+  display: table-cell;
+}
+
+.compare-cell .status-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 0.75rem;
+  margin-right: 8px;
+  vertical-align: -4px;
+}
+
+@media (max-width: 560px) {
+  .compare-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .compare-table tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 10px;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .compare-table th,
+  .compare-table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .compare-table tbody th {
+    grid-column: 1 / -1;
+    width: auto;
+    margin-bottom: 6px;
+  }
+
+  .compare-table tr.is-different {
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  .compare-table tr.is-different th {
+    box-shadow: none;
+  }
+
+  .compare-table .diff-tag {
+    display: inline;
+    margin: 0 0 0 8px;
+  }
+
+  .compare-cell {
+    display: block;
+  }
+
+  .compare-cell::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+}
+
 .kind {
   display: inline-block;
   font-size: 0.68rem;
@@ -944,6 +1224,7 @@ select:focus {
   }
 
   .site-header,
+  .modes,
   .inputs .help,
   .form-actions,
   .skip-link {

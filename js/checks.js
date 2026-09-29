@@ -55,8 +55,9 @@
     return type === "motorCar" ? "motor car" : "goods vehicle";
   }
 
-  function result(id, title, status, reason, ruleIds, notes) {
-    return { id, title, status, reason, ruleIds, notes: notes || [] };
+  // data: optional machine-readable outcome (used for short summaries, e.g. the comparison table)
+  function result(id, title, status, reason, ruleIds, notes, data) {
+    return { id, title, status, reason, ruleIds, notes: notes || [], data: data || null };
   }
 
   // ------------------------------------------------------------------ §4.1 licence code (reg 99)
@@ -116,8 +117,9 @@
     }
     if (t.count > 1) notes.push(rule.notes[0]);
 
+    const data = { required };
     if (!input.licenceCode) {
-      return result("licence", title, "info", `You need code ${required}. ${why}`, ids, notes);
+      return result("licence", title, "info", `You need code ${required}. ${why}`, ids, notes, data);
     }
     const covered = (p.includes[input.licenceCode] || []).indexOf(required) !== -1;
     if (covered) {
@@ -127,7 +129,8 @@
         "pass",
         `Your code ${input.licenceCode} covers this (needs ${required}). ${why}`,
         ids,
-        notes
+        notes,
+        data
       );
     }
     return result(
@@ -136,7 +139,8 @@
       "fail",
       `This needs code ${required}; code ${input.licenceCode} only covers ${p.includes[input.licenceCode].join(", ")}. ${why}`,
       ids,
-      notes
+      notes,
+      data
     );
   }
 
@@ -206,7 +210,8 @@
         ? `${reason} ${capitalise(BRAKE_FITTED_TEXT[input.trailerBrake])}: legal.`
         : `${reason} It has ${BRAKE_FITTED_TEXT[input.trailerBrake]}: not legal.`,
       ids,
-      notes
+      notes,
+      { required: need.level }
     );
   }
 
@@ -226,15 +231,18 @@
       return result("speed", title, "incomplete", "Choose the vehicle type from your registration papers.", [
         "reg293-goods-towing-speed",
       ]);
+    const noTowingLimit = { limitKmh: null, sign: false };
     if (t.count === 0)
-      return result("speed", title, "info", `No trailer entered. ${generalText}`, ["reg292-general-speed"]);
+      return result("speed", title, "info", `No trailer entered. ${generalText}`, ["reg292-general-speed"], null, noTowingLimit);
     if (input.vehicleType === "motorCar") {
       return result(
         "speed",
         title,
         "info",
         `The reg 293 towing limit applies to goods vehicles only, not to a motor car. ${generalText}`,
-        ["reg293-goods-towing-speed", "reg292-general-speed", "def-motor-car"]
+        ["reg293-goods-towing-speed", "reg292-general-speed", "def-motor-car"],
+        null,
+        noTowingLimit
       );
     }
 
@@ -254,7 +262,8 @@
         "warn",
         `Maximum ${p.heavyLimitKmh} km/h. ${sumText}, over ${kg(p.combinedGvmHeavyOverKg)} (reg ${p.clauses.heavy}).`,
         ids,
-        ["Speed-limit sign requirements for this class are not covered yet; confirm with your DLTC."]
+        ["Speed-limit sign requirements for this class are not covered yet; confirm with your DLTC."],
+        { limitKmh: p.heavyLimitKmh, sign: false }
       );
     }
     if (combined > p.combinedGvmOverKg) {
@@ -263,7 +272,9 @@
         title,
         "warn",
         `Maximum ${p.limitKmh} km/h, and a ${p.limitKmh} km/h sign must be displayed on the rear. ${sumText}, over ${kg(p.combinedGvmOverKg)} (reg ${p.clauses.limit}).`,
-        ids.concat("reg293-speed-sign")
+        ids.concat("reg293-speed-sign"),
+        null,
+        { limitKmh: p.limitKmh, sign: true }
       );
     }
     return result(
@@ -271,7 +282,9 @@
       title,
       "info",
       `${sumText}, not over ${kg(p.combinedGvmOverKg)}, so the reg 293 towing limit does not apply. ${generalText}`,
-      ids.concat("reg292-general-speed")
+      ids.concat("reg292-general-speed"),
+      null,
+      noTowingLimit
     );
   }
 

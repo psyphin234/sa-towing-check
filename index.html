@@ -31,12 +31,19 @@
       <p class="privacy">Everything is worked out in your browser. Nothing you enter is sent anywhere.</p>
     </section>
 
+    <div class="modes" role="group" aria-label="What do you want to do?">
+      <button type="button" class="mode-button" data-mode="check" aria-pressed="true">Check my rig</button>
+      <button type="button" class="mode-button" data-mode="tow" aria-pressed="false">What can I tow?</button>
+      <button type="button" class="mode-button" data-mode="compare" aria-pressed="false">Car vs bakkie</button>
+    </div>
+    <p class="mode-hint"><span id="mode-hint"></span> <a class="jump-link" href="#results-title">Jump to results</a></p>
+
     <div class="layout">
       <form id="rig-form" class="inputs" autocomplete="off" novalidate>
         <fieldset>
           <legend>Tow vehicle</legend>
 
-          <div class="field">
+          <div class="field" data-modes="check tow">
             <span class="label" id="vehicle-type-label">Vehicle type (as registered)</span>
             <div class="choice" role="radiogroup" aria-labelledby="vehicle-type-label">
               <label><input type="radio" name="vehicleType" value="goodsVehicle"><span>Goods vehicle <small>bakkie / LDV</small></span></label>
@@ -60,7 +67,7 @@
             <p class="hint">Maximum laden mass from the manufacturer: compliance plate or owner's manual.</p>
           </div>
 
-          <div class="field">
+          <div class="field" data-modes="check compare">
             <label for="drive">Drive</label>
             <select id="drive" name="drive">
               <option value="">Choose…</option>
@@ -87,7 +94,7 @@
           </div>
         </fieldset>
 
-        <fieldset>
+        <fieldset data-modes="check compare">
           <legend>Trailer</legend>
           <div class="field">
             <label for="trailerCount">Number of trailers</label>
@@ -160,11 +167,11 @@
               <div class="unit-input"><input id="unbrakedCapacityKg" name="unbrakedCapacityKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
             </div>
           </div>
-          <div class="field">
+          <div class="field" data-modes="check compare">
             <label for="maxTowballKg">Maximum tow ball mass</label>
             <div class="unit-input"><input id="maxTowballKg" name="maxTowballKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
           </div>
-          <div class="field-row">
+          <div class="field-row" data-modes="check compare">
             <div class="field">
               <label for="frontAxleRatingKg">Front axle rating</label>
               <div class="unit-input"><input id="frontAxleRatingKg" name="frontAxleRatingKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
@@ -188,7 +195,7 @@
           <p class="load-total">Load total: <strong id="load-total">0 kg</strong></p>
         </fieldset>
 
-        <fieldset>
+        <fieldset data-modes="check compare">
           <details class="fieldset-details" id="weighbridge-details">
             <summary>Weighbridge and measurements <small>(optional)</small></summary>
             <p class="hint fieldset-hint">Readings taken with the trailer hitched and everything loaded for the trip. They replace the estimates.</p>
@@ -220,23 +227,35 @@
         </fieldset>
 
         <div class="form-actions">
-          <button type="button" id="load-example" class="button button--ghost">Load worked example</button>
+          <button type="button" id="load-example" class="button button--ghost" data-modes="check">Load worked example</button>
           <button type="reset" class="button button--ghost">Clear</button>
         </div>
       </form>
 
       <section class="results" aria-labelledby="results-title">
         <h2 id="results-title" class="visually-hidden">Results</h2>
-        <div id="overall" class="overall" role="status" aria-live="polite"></div>
+        <div id="overall" class="overall" role="status" aria-live="polite" data-modes="check"></div>
 
-        <section id="trailer-limit" class="limit-tile" aria-labelledby="limit-title"></section>
+        <section id="trailer-limit" class="limit-tile" aria-labelledby="limit-title" data-modes="check"></section>
 
-        <section class="panel panel--legal" aria-labelledby="legal-title">
+        <section class="panel panel--legal" aria-labelledby="legal-title" data-modes="check">
           <h2 id="legal-title">Legal requirements <span class="panel-tag">Law</span></h2>
           <ul id="legal-checks" class="checks"></ul>
         </section>
 
-        <section class="panel panel--maker" aria-labelledby="maker-title">
+        <section class="panel panel--legal" aria-labelledby="tow-title" data-modes="tow">
+          <h2 id="tow-title">What can I tow?</h2>
+          <p class="muted panel-intro">The heaviest trailer for each type of trailer brakes. Legal limits apply to the trailer's plated GVM; manufacturer limits to what the loaded trailer actually weighs.</p>
+          <div id="tow-body" aria-live="polite"></div>
+        </section>
+
+        <section class="panel panel--compare" aria-labelledby="compare-title" data-modes="compare">
+          <h2 id="compare-title">Motor car vs goods vehicle</h2>
+          <p class="muted panel-intro">The same tare, GVM, trailer and load, registered as a motor car (such as an SUV) or as a goods vehicle (such as a bakkie). Your registration papers decide which column is yours, not the body shape.</p>
+          <div id="compare-body" aria-live="polite"></div>
+        </section>
+
+        <section class="panel panel--maker" aria-labelledby="maker-title" data-modes="check">
           <h2 id="maker-title">Manufacturer ratings <span class="panel-tag">Not law</span></h2>
           <p class="muted panel-intro">The vehicle maker's limits. Breaking them isn't necessarily an offence for a motor car, but it is unsafe and your insurer may rely on them.</p>
           <p id="maker-summary" class="panel-summary"></p>
@@ -267,6 +286,7 @@
   <script src="js/rules.js"></script>
   <script src="js/checks.js"></script>
   <script src="js/ratings.js"></script>
+  <script src="js/modes.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/app.js"></script>
 </body>

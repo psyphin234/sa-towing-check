@@ -8,6 +8,8 @@ Is your car or bakkie plus trailer legal on South African roads? This static web
 - **Overloading and the driving axle ratio** for goods vehicles (reg 239)
 - **Manufacturer ratings** (not law): payload, GCM, towing capacity, tow ball mass, trailer GVM and axle loads, and the heaviest trailer your rig may tow
 
+Two more modes: **What can I tow?** (the heaviest trailer for each type of brakes, from your vehicle and licence code) and **Car vs bakkie** (how the rules change when the same vehicle is registered as a motor car or a goods vehicle).
+
 Every rule links to its source, and rules not yet checked against the official gazetted regulations are marked as unverified. See [sources.html](sources.html).
 
 Everything runs in your browser; nothing you enter is sent anywhere.

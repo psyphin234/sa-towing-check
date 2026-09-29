@@ -9,7 +9,26 @@
   const R = window.TOWING_RULES;
   const C = window.TOWING_CHECKS;
   const M = window.TOWING_RATINGS;
+  const MD = window.TOWING_MODES;
   const { el, citation } = window.TOWING_UI;
+
+  // ---------------------------------------------------------------- modes
+  const MODES = {
+    check: "Enter your vehicle, trailer and load to check everything at once.",
+    tow: "Enter your vehicle and licence code to see the heaviest trailer you may tow with each type of brakes.",
+    compare: "See how the rules change when the same vehicle is registered as a motor car or as a goods vehicle.",
+  };
+  let mode = "check";
+
+  function setMode(next, updateHash) {
+    mode = MODES[next] ? next : "check";
+    document.querySelectorAll(".mode-button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+    document.querySelectorAll("[data-modes]").forEach((node) => {
+      node.hidden = node.dataset.modes.split(" ").indexOf(mode) === -1;
+    });
+    document.getElementById("mode-hint").textContent = MODES[mode];
+    if (updateHash) history.replaceState(null, "", mode === "check" ? location.pathname : "#" + mode);
+  }
 
   const form = document.getElementById("rig-form");
   const overallBox = document.getElementById("overall");
@@ -242,10 +261,173 @@
     );
   }
 
+  // ---------------------------------------------------------------- What can I tow?
+  function citeList(ruleIds) {
+    return el("ul", { class: "cites", "aria-label": "Sources" }, Array.from(new Set(ruleIds)).map((id) => citation(R.get(id), true)));
+  }
+
+  function limitLine(limit, category) {
+    return el(
+      "li",
+      { class: limit.binding ? "is-binding" : null },
+      el("span", { class: "tow-line-label" }, limit.label, limit.binding ? el("span", { class: "visually-hidden" }, " (the tighter limit)") : null),
+      el("span", { class: "tow-line-kg" }, C.kg(limit.kg)),
+      el("span", { class: "kind kind--" + category }, category === "legal" ? "Law" : "Not law")
+    );
+  }
+
+  function makerSentence(row) {
+    if (row.makerMaxKg === null)
+      return row.legalMaxKg === null
+        ? "Enter the braked towing capacity and GCM to see a limit for this case."
+        : null;
+    if (row.legalMaxKg === null)
+      return `Your manufacturer ratings set the limit: the loaded trailer may weigh at most ${C.kg(row.makerMaxKg)}.`;
+    if (row.makerMaxKg < row.legalMaxKg)
+      return `Your manufacturer ratings are the tighter limit: the loaded trailer may weigh at most ${C.kg(row.makerMaxKg)}.`;
+    return `Your manufacturer ratings allow a loaded trailer of up to ${C.kg(row.makerMaxKg)}, so the law is the tighter limit.`;
+  }
+
+  function towCard(row) {
+    const ids = row.legal.concat(row.maker).map((l) => l.ruleId);
+    if (row.brake === "service") ids.push("def-overrun-service-brake");
+    if (!ids.length) ids.push("reg151-trailer-brakes");
+    const sentence = makerSentence(row);
+    return el(
+      "li",
+      { class: "tow-card" },
+      el("h3", null, row.title),
+      el("p", { class: "tow-figure" + (row.legalMaxKg === null ? " tow-figure--none" : "") }, row.legalMaxKg === null ? "No legal cap" : C.kg(row.legalMaxKg)),
+      el(
+        "p",
+        { class: "tow-figure-sub" },
+        row.legalMaxKg === null
+          ? "Reg 151 and your licence code set no trailer limit here; manufacturer ratings still apply."
+          : "Heaviest trailer GVM allowed by law"
+      ),
+      row.legal.length || row.maker.length
+        ? el("ul", { class: "tow-lines" }, row.legal.map((l) => limitLine(l, "legal")), row.maker.map((l) => limitLine(l, "manufacturer")))
+        : null,
+      sentence ? el("p", { class: "tow-sentence" }, sentence) : null,
+      el("p", { class: "hint" }, `Licence code needed for the full allowance: ${row.codeNeeded}.`),
+      citeList(ids)
+    );
+  }
+
+  function speedCard(s) {
+    const g = s.general;
+    const generalText = `general limits (${g.urbanKmh} / ${g.ruralKmh} / ${g.freewayKmh} km/h)`;
+    let lines;
+    let ids;
+    if (!s.applies) {
+      lines = [`${generalText.charAt(0).toUpperCase() + generalText.slice(1)} whatever you tow. The reg 293 towing limit applies to goods vehicles only.`];
+      ids = ["reg293-goods-towing-speed", "reg292-general-speed"];
+    } else if (s.incomplete) {
+      lines = ["Enter the GVM to see the speed limit when towing."];
+      ids = ["reg293-goods-towing-speed"];
+    } else {
+      lines = [];
+      if (s.limitOverKg > 0) lines.push(`Trailer GVM up to ${C.kg(s.limitOverKg)}: ${generalText}.`);
+      lines.push(
+        (s.limitOverKg > 0 ? `Trailer GVM over ${C.kg(s.limitOverKg)}: ` : "Any trailer: ") +
+          `${s.limitKmh} km/h maximum and a ${s.limitKmh} km/h sign on the rear.`
+      );
+      lines.push(`Trailer GVM over ${C.kg(s.heavyOverKg)}: ${s.heavyLimitKmh} km/h maximum.`);
+      ids = ["reg293-goods-towing-speed", "reg293-speed-sign"];
+    }
+    return el(
+      "div",
+      { class: "tow-speed" },
+      el("h3", null, "Speed limit when towing"),
+      el("ul", null, lines.map((l) => el("li", null, l))),
+      s.applies && !s.incomplete ? el("p", { class: "hint" }, "Based on your vehicle's GVM plus the trailer's plated GVM.") : null,
+      citeList(ids)
+    );
+  }
+
+  function renderTow(input) {
+    const body = document.getElementById("tow-body");
+    const t = MD.whatCanITow(input);
+    if (!t.ready) {
+      body.replaceChildren(el("p", { class: "muted" }, t.reason));
+      return;
+    }
+    body.replaceChildren(
+      el("ul", { class: "tow-cards" }, t.rows.map(towCard)),
+      speedCard(t.speed),
+      t.notes.length ? el("ul", { class: "check-notes" }, t.notes.map((n) => el("li", null, n))) : null
+    );
+  }
+
+  // ---------------------------------------------------------------- motor car vs goods vehicle
+  function compareCell(sum, label) {
+    return el(
+      "td",
+      { class: "compare-cell compare-cell--" + sum.status, "data-label": label },
+      el("span", { class: "status-icon", "aria-hidden": "true" }, STATUS_ICON[sum.status]),
+      el("span", null, sum.text)
+    );
+  }
+
+  function renderCompare(input) {
+    const body = document.getElementById("compare-body");
+    const c = MD.compareBodyTypes(input);
+    if (!c.ready) {
+      body.replaceChildren(el("p", { class: "muted" }, c.reason));
+      return;
+    }
+    const carLabel = "Motor car";
+    const goodsLabel = "Goods vehicle";
+    const ids = ["def-vehicle-type-from-papers", "def-motor-car", "def-goods-vehicle"].concat(...c.rows.map((r) => r.ruleIds));
+    body.replaceChildren(
+      el(
+        "p",
+        { class: "panel-summary compare-summary" },
+        c.differences === 0
+          ? "No differences for these figures."
+          : `${c.differences} difference${c.differences > 1 ? "s" : ""} for these figures, highlighted below.`
+      ),
+      el(
+        "div",
+        { class: "table-wrap" },
+        el(
+          "table",
+          { class: "compare-table" },
+          el(
+            "thead",
+            null,
+            el("tr", null, el("th", { scope: "col" }, "Rule"), el("th", { scope: "col" }, carLabel + " (e.g. SUV)"), el("th", { scope: "col" }, goodsLabel + " (e.g. bakkie)"))
+          ),
+          el(
+            "tbody",
+            null,
+            c.rows.map((r) =>
+              el(
+                "tr",
+                { class: r.same ? null : "is-different" },
+                el("th", { scope: "row" }, r.title, r.same ? null : el("span", { class: "diff-tag" }, "Differs")),
+                compareCell(r.car, carLabel),
+                compareCell(r.goods, goodsLabel)
+              )
+            )
+          )
+        )
+      ),
+      el(
+        "p",
+        { class: "hint" },
+        "Trailer brakes depend only on tare, so they never differ. Manufacturer ratings (payload, GCM, towing capacity) are the same for both; see Check my rig."
+      ),
+      el("details", { class: "help compare-sources" }, el("summary", null, `Sources (${new Set(ids).size})`), citeList(ids))
+    );
+  }
+
   function render() {
     syncTrailerFields();
     const input = readInput();
     updateLoadTotal(input.loadItems);
+    renderTow(input);
+    renderCompare(input);
 
     const legal = C.runLegalChecks(input);
     overallBox.className = "overall overall--" + legal.overall;
@@ -299,6 +481,7 @@
 
   function loadExample(scroll) {
     const ex = R.explainers.whyNotRated.example;
+    setMode("check", true);
     clearForm();
     form.querySelector(`input[name="vehicleType"][value="${ex.vehicleType}"]`).checked = true;
     const set = (name, value) => (form.elements[name].value = value);
@@ -315,7 +498,7 @@
     set("towballKg", ex.towballKg);
     ex.loadItems.forEach((it) => addLoadRow(it.preset, it.qty));
     render();
-    if (scroll !== false) document.getElementById("results-title").scrollIntoView({ behavior: "smooth", block: "start" });
+    if (scroll !== false) document.querySelector(".results").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   form.addEventListener("input", render);
@@ -329,10 +512,30 @@
     if (e.target.closest("[data-load-example]")) loadExample();
   });
 
+  // Scroll without touching the URL hash (it holds the mode).
+  document.querySelector(".jump-link").addEventListener("click", (e) => {
+    e.preventDefault();
+    document.querySelector(".results").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.querySelectorAll(".mode-button").forEach((b) =>
+    b.addEventListener("click", () => {
+      setMode(b.dataset.mode, true);
+      render();
+    })
+  );
+
   document.getElementById("year").textContent = new Date().getFullYear();
   fillHelp();
   fillExplainers();
-  // index.html#example opens with the worked example filled in (a shareable link).
-  if (location.hash === "#example") loadExample(false);
-  else render();
+  // index.html#example opens with the worked example filled in (a shareable
+  // link); #tow and #compare open those modes.
+  const hash = location.hash.slice(1);
+  if (hash === "example") {
+    loadExample(false);
+    history.replaceState(null, "", "#example");
+  } else {
+    setMode(hash, false);
+    render();
+  }
 })();
