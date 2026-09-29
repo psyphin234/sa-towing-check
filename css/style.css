@@ -461,7 +461,7 @@ select:focus {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 10px;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .load-row input:focus {
@@ -477,8 +477,8 @@ select:focus {
 }
 
 .load-remove {
-  min-width: 40px;
-  min-height: 40px;
+  min-width: 44px;
+  min-height: 44px;
   font-size: 1.3rem;
   line-height: 1;
   color: var(--text-muted);
