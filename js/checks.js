@@ -1,5 +1,6 @@
 /*
- * checks.js: legal checks (SPEC §4.1–4.3). Pure functions, no DOM.
+ * checks.js: legal checks (SPEC §4.1–4.4) and the rig mass model shared with
+ * ratings.js. Pure functions, no DOM.
  *
  * Every threshold comes from rules.js params. Each check returns:
  *   { id, title, status, reason, notes: [], ruleIds: [] }
@@ -16,7 +17,15 @@
  *     tareKg, gvmKg,
  *     licenceCode: "B" | "EB" | "C1" | "EC1" | "C" | "EC" | "",
  *     trailers: [{ gvmKg }],            // 0, 1 or 2 trailers
- *     trailerBrake: "none" | "overrun" | "service"
+ *     trailerBrake: "none" | "overrun" | "service",
+ *     // optional, used from build step 3 on:
+ *     drive: "rwd" | "fwd" | "4wd" | "",
+ *     gcmKg, frontAxleRatingKg, rearAxleRatingKg,
+ *     brakedCapacityKg, unbrakedCapacityKg, maxTowballKg,
+ *     loadItems: [{ label, kg, qty }],  // kg each x qty
+ *     towballKg, trailerTareKg, trailerActualKg,   // trailer masses are totals for all trailers
+ *     weighbridge: { frontAxleKg, rearAxleKg, trailerAxlesKg },  // trailer hitched
+ *     wheelbaseMm, rearOverhangMm
  *   }
  */
 (function (root) {
@@ -266,19 +275,214 @@
     );
   }
 
+  // ------------------------------------------------------------------ rig mass model
+  // Where each mass comes from, best source first. Weighbridge readings are
+  // taken with the trailer hitched, so the vehicle's axles already carry the
+  // tow ball mass and the trailer's axles carry the rest of the trailer.
+  const MASS_SOURCE_TEXT = {
+    weighbridge: "weighbridge readings",
+    estimate: "an estimate (tare + load list + tow ball mass)",
+    entered: "the trailer's actual mass you entered",
+    plated: "the trailer's plated GVM, as no actual mass was entered",
+  };
+
+  function rigMasses(input) {
+    const t = trailerSum(input);
+    const itemsKg = (input.loadItems || []).reduce((s, it) => {
+      const each = Number(it.kg);
+      const qty = Number(it.qty);
+      return s + (each > 0 && qty > 0 ? each * qty : 0);
+    }, 0);
+    const towballKnown = isNum(input.towballKg);
+    const tb = t.count && towballKnown ? input.towballKg : 0;
+    const wb = input.weighbridge || {};
+
+    let vehicle = null;
+    if (isNum(wb.frontAxleKg) && isNum(wb.rearAxleKg))
+      vehicle = { kg: wb.frontAxleKg + wb.rearAxleKg, source: "weighbridge" };
+    else if (isNum(input.tareKg)) vehicle = { kg: input.tareKg + itemsKg + tb, source: "estimate" };
+
+    let trailer = null;
+    if (t.count) {
+      if (isNum(wb.trailerAxlesKg)) trailer = { kg: wb.trailerAxlesKg + tb, source: "weighbridge" };
+      else if (isNum(input.trailerActualKg)) trailer = { kg: input.trailerActualKg, source: "entered" };
+      else if (t.complete && t.sumKg > 0) trailer = { kg: t.sumKg, source: "plated" };
+    }
+
+    let combined = null;
+    if (vehicle && (t.count === 0 || trailer)) {
+      const allWeighed = vehicle.source === "weighbridge" && (t.count === 0 || trailer.source === "weighbridge");
+      combined = { kg: vehicle.kg - tb + (trailer ? trailer.kg : 0), source: allWeighed ? "weighbridge" : "estimate" };
+    }
+
+    return {
+      trailerCount: t.count,
+      trailerPlatedKg: t.complete ? t.sumKg : null,
+      itemsKg,
+      towballKg: towballKnown ? input.towballKg : null,
+      towballMissing: t.count > 0 && !towballKnown,
+      vehicle,
+      trailer,
+      combined,
+      // vehicle mass without the tow ball: what the GCM leaves room against
+      vehicleOwnKg: vehicle ? vehicle.kg - tb : null,
+    };
+  }
+
+  // ------------------------------------------------------------------ §4.4 overloading (reg 239)
+  function overloadingCheck(input) {
+    const title = "Overloading";
+    const ids = ["reg239-overloading"];
+    if (!input.vehicleType)
+      return result("overloading", title, "incomplete", "Choose the vehicle type from your registration papers.", ids);
+    if (input.vehicleType === "motorCar") {
+      return result(
+        "overloading",
+        title,
+        "info",
+        "Reg 239 lists goods vehicles, minibuses, buses and tractors, not motor cars, so this offence (and the driving axle rule) does not apply to your vehicle. Its GVM, axle and GCM ratings still matter for safety and insurance: see Manufacturer ratings.",
+        ids.concat("reg239-motor-car-exclusion")
+      );
+    }
+    if (!isNum(input.gvmKg)) return result("overloading", title, "incomplete", "Enter the vehicle's GVM.", ids);
+
+    const m = rigMasses(input);
+    if (!m.vehicle)
+      return result("overloading", title, "incomplete", "Enter the tare, or weighbridge axle readings.", ids);
+    if (m.vehicle.source === "estimate" && m.itemsKg === 0 && !m.towballKg) {
+      return result(
+        "overloading",
+        title,
+        "info",
+        "Add what you carry to the load list (or enter weighbridge readings) to check the vehicle against its GVM.",
+        ids.concat("def-gvm")
+      );
+    }
+
+    const over = [];
+    const parts = [];
+    const notes = [];
+    ids.push("def-gvm");
+
+    parts.push(`Vehicle ${kg(m.vehicle.kg)} against its GVM of ${kg(input.gvmKg)}.`);
+    if (m.vehicle.kg > input.gvmKg) over.push(`over GVM by ${kg(m.vehicle.kg - input.gvmKg)}`);
+
+    const wb = input.weighbridge || {};
+    [
+      ["front", wb.frontAxleKg, input.frontAxleRatingKg],
+      ["rear", wb.rearAxleKg, input.rearAxleRatingKg],
+    ].forEach(([axle, load, rating]) => {
+      if (isNum(load) && isNum(rating)) {
+        parts.push(`${capitalise(axle)} axle ${kg(load)} against its rating of ${kg(rating)}.`);
+        if (load > rating) over.push(`${axle} axle over by ${kg(load - rating)}`);
+      }
+    });
+    if (!isNum(wb.frontAxleKg) || !isNum(wb.rearAxleKg))
+      notes.push("Axle loads are only checked from weighbridge readings.");
+
+    if (isNum(input.gcmKg) && m.combined) {
+      ids.push("def-gcm");
+      parts.push(`Combination ${kg(m.combined.kg)} against the GCM of ${kg(input.gcmKg)}.`);
+      if (m.combined.kg > input.gcmKg) over.push(`over GCM by ${kg(m.combined.kg - input.gcmKg)}`);
+    } else if (!isNum(input.gcmKg)) {
+      notes.push("GCM not entered, so the combination is not checked.");
+    }
+
+    notes.unshift(`Vehicle mass from ${MASS_SOURCE_TEXT[m.vehicle.source]}.`);
+    if (m.trailer && isNum(input.gcmKg)) notes.push(`Trailer mass from ${MASS_SOURCE_TEXT[m.trailer.source]}.`);
+    if (m.towballMissing) notes.push("Tow ball mass not entered: it adds to the vehicle's mass.");
+
+    return result(
+      "overloading",
+      title,
+      over.length ? "fail" : "pass",
+      (over.length ? `Overloaded: ${over.join("; ")}. ` : "Within the limits checked. ") + parts.join(" "),
+      ids,
+      notes
+    );
+  }
+
+  const DRIVE_TEXT = { rwd: "rear axle", fwd: "front axle", "4wd": "front and rear axles" };
+
+  function drivingAxleCheck(input) {
+    if (input.vehicleType !== "goodsVehicle") return null; // covered by the overloading card for motor cars
+    const p = R.get("reg239-driving-axle").params;
+    const title = "Driving axle ratio";
+    const ids = ["reg239-driving-axle"];
+    const wb = input.weighbridge || {};
+    if (!isNum(wb.frontAxleKg) && !isNum(wb.rearAxleKg)) {
+      return result(
+        "driving-axle",
+        title,
+        "info",
+        `The combination may weigh at most ${p.maxMassToDrivingAxleRatio} times the load on the driving axle(s). Checking this needs weighbridge axle readings with the trailer hitched.`,
+        ids
+      );
+    }
+    if (!input.drive) return result("driving-axle", title, "incomplete", "Choose the vehicle's drive type.", ids);
+
+    const driving =
+      input.drive === "rwd"
+        ? wb.rearAxleKg
+        : input.drive === "fwd"
+        ? wb.frontAxleKg
+        : isNum(wb.frontAxleKg) && isNum(wb.rearAxleKg)
+        ? wb.frontAxleKg + wb.rearAxleKg
+        : null;
+    if (!isNum(driving))
+      return result("driving-axle", title, "incomplete", `Enter the weighbridge reading for the ${DRIVE_TEXT[input.drive]}.`, ids);
+
+    const m = rigMasses(input);
+    if (!m.combined)
+      return result("driving-axle", title, "incomplete", "Enter both axle readings (or the tare) and the trailer mass.", ids);
+
+    const limit = driving * p.maxMassToDrivingAxleRatio;
+    const ok = m.combined.kg <= limit;
+    const notes = [`Combination mass from ${MASS_SOURCE_TEXT[m.combined.source]}.`];
+    if (input.drive === "4wd") notes.push(R.get("reg239-driving-axle").notes[0]);
+    return result(
+      "driving-axle",
+      title,
+      ok ? "pass" : "fail",
+      `Combination ${kg(m.combined.kg)} ${ok ? "is within" : "is more than"} ${p.maxMassToDrivingAxleRatio} × the ${DRIVE_TEXT[input.drive]} load of ${kg(driving)} = ${kg(limit)}.`,
+      ids,
+      notes
+    );
+  }
+
   // ------------------------------------------------------------------ all checks
   const STATUS_RANK = { fail: 4, incomplete: 3, warn: 2, info: 1, pass: 0 };
 
-  function runLegalChecks(input) {
-    const checks = [licenceCheck(input), brakeCheck(input), speedCheck(input)];
-    const overall = checks.reduce(
-      (worst, c) => (STATUS_RANK[c.status] > STATUS_RANK[worst] ? c.status : worst),
-      "pass"
-    );
-    return { checks, overall };
+  function worstStatus(checks) {
+    return checks.reduce((worst, c) => (STATUS_RANK[c.status] > STATUS_RANK[worst] ? c.status : worst), "pass");
   }
 
-  const api = { runLegalChecks, licenceCheck, brakeCheck, speedCheck, requiredBrake, maxTrailerByBrake, kg };
+  function runLegalChecks(input) {
+    const checks = [
+      licenceCheck(input),
+      brakeCheck(input),
+      speedCheck(input),
+      overloadingCheck(input),
+      drivingAxleCheck(input),
+    ].filter(Boolean);
+    return { checks, overall: worstStatus(checks) };
+  }
+
+  const api = {
+    runLegalChecks,
+    licenceCheck,
+    brakeCheck,
+    speedCheck,
+    overloadingCheck,
+    drivingAxleCheck,
+    requiredBrake,
+    maxTrailerByBrake,
+    rigMasses,
+    worstStatus,
+    isNum,
+    kg,
+    MASS_SOURCE_TEXT,
+  };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TOWING_CHECKS = api;
 })(typeof window !== "undefined" ? window : globalThis);

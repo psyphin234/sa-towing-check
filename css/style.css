@@ -181,11 +181,6 @@ h3 {
     grid-template-columns: minmax(300px, 380px) 1fr;
     align-items: start;
   }
-
-  .inputs {
-    position: sticky;
-    top: 70px;
-  }
 }
 
 /* ------------------------------------------------------------ form */
@@ -325,6 +320,130 @@ select:focus {
 
 .help-body p {
   margin: 0 0 6px;
+}
+
+.fieldset-hint {
+  margin: 0 0 12px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 10px;
+}
+
+.field-row > .field > label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.field-row-hint {
+  margin: -8px 0 14px;
+}
+
+.fieldset-details > summary {
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.fieldset-details > summary small {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.inputs fieldset:has(> .fieldset-details) {
+  padding-top: 12px;
+}
+
+/* load list builder */
+.load-list {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.load-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 6px 8px;
+  align-items: end;
+  padding: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.load-row input[type="text"] {
+  grid-column: 1 / -1;
+}
+
+.load-row input {
+  width: 100%;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-height: 40px;
+}
+
+.load-row input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.load-num span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.load-remove {
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.load-remove:hover {
+  color: var(--fail);
+  border-color: var(--fail);
+}
+
+.load-add {
+  display: flex;
+  gap: 8px;
+}
+
+.load-add select {
+  flex: 1;
+  min-width: 0;
+}
+
+.load-total {
+  margin: 10px 0 12px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.load-total strong {
+  color: var(--text);
 }
 
 .form-actions {
@@ -491,6 +610,195 @@ select:focus {
 
 .check-notes li + li {
   margin-top: 2px;
+}
+
+/* meter: fill carries the status; the track is a dim step of the same colour */
+.meter {
+  --tone: var(--incomplete);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.meter--pass { --tone: var(--pass); }
+.meter--warn { --tone: var(--warn); }
+.meter--fail { --tone: var(--fail); }
+.meter--info { --tone: var(--info); }
+
+.meter-track {
+  flex: 1;
+  height: 10px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tone) 22%, var(--surface-2));
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--tone);
+}
+
+.meter-text {
+  flex: none;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel-intro {
+  font-size: 0.875rem;
+}
+
+.panel-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 0;
+  font-weight: 600;
+  --tone: var(--incomplete);
+}
+
+.panel-summary.overall--pass { --tone: var(--pass); }
+.panel-summary.overall--warn { --tone: var(--warn); }
+.panel-summary.overall--fail { --tone: var(--fail); }
+
+/* heaviest trailer tile */
+.limit-tile {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.limit-tile h2 {
+  font-size: 1.3rem;
+}
+
+.limit-tile > p {
+  margin: 8px 0 0;
+}
+
+.limit-figure {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 3.2rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.limit-sub {
+  color: var(--text);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.limit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.limit-table th,
+.limit-table td {
+  text-align: left;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.limit-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.limit-table .num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.limit-table tr.is-binding td {
+  font-weight: 600;
+  background: var(--surface-2);
+}
+
+.limit-table tr.is-binding td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* phones: each limit becomes a two-line block (name, then figure / basis / type) */
+@media (max-width: 560px) {
+  .limit-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .limit-table tr {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    column-gap: 12px;
+    align-items: baseline;
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .limit-table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .limit-table td:first-child {
+    grid-column: 1 / -1;
+    margin-bottom: 2px;
+  }
+
+  .limit-table tr.is-binding {
+    background: var(--surface-2);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  .limit-table tr.is-binding td,
+  .limit-table tr.is-binding td:first-child {
+    background: none;
+    box-shadow: none;
+  }
+
+  .limit-table .num {
+    text-align: left;
+  }
+}
+
+.kind {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+
+.kind--legal {
+  color: var(--legal);
+  border: 1px solid var(--legal);
+}
+
+.kind--manufacturer {
+  color: var(--maker);
+  border: 1px solid var(--maker);
 }
 
 .cites {

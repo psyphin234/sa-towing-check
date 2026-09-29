@@ -141,6 +141,41 @@
       ...UNVERIFIED,
     },
 
+    {
+      id: "def-tare",
+      category: "definition",
+      title: "Tare",
+      summary:
+        "The mass of the vehicle unladen. Use the tare printed on the licence disc / registration certificate.",
+      regulation: "National Road Traffic Act 93 of 1996, s1",
+      sourceUrl: SRC.ddyn.url,
+      sourceLabel: SRC.ddyn.label,
+      moreSources: [src("saflii")],
+      ...UNVERIFIED,
+    },
+    {
+      id: "def-gvm",
+      category: "definition",
+      title: "GVM (gross vehicle mass)",
+      summary: "The maximum laden mass of the vehicle, as specified by the manufacturer (on the compliance plate).",
+      regulation: "National Road Traffic Act 93 of 1996, s1",
+      sourceUrl: SRC.ddyn.url,
+      sourceLabel: SRC.ddyn.label,
+      moreSources: [src("saflii")],
+      ...UNVERIFIED,
+    },
+    {
+      id: "def-gcm",
+      category: "definition",
+      title: "GCM (gross combination mass)",
+      summary: "The maximum combined mass of the vehicle plus trailer(s), as specified by the manufacturer.",
+      regulation: "National Road Traffic Act 93 of 1996, s1",
+      sourceUrl: SRC.ddyn.url,
+      sourceLabel: SRC.ddyn.label,
+      moreSources: [src("saflii")],
+      ...UNVERIFIED,
+    },
+
     // ---------------------------------------------------------------- reg 99 licence codes
     {
       id: "reg99-licence-codes",
@@ -282,7 +317,7 @@
       ...UNVERIFIED,
     },
 
-    // ---------------------------------------------------------------- reg 239 overloading (checks come in build step 3)
+    // ---------------------------------------------------------------- reg 239 overloading
     {
       id: "reg239-overloading",
       category: "legal",
@@ -293,6 +328,9 @@
       sourceUrl: SRC.arriveTowing.url,
       sourceLabel: SRC.arriveTowing.label,
       ...UNVERIFIED,
+      notes: [
+        "The \"GVM, axle massload or GCM\" list follows the brief's reading of the regulation heading; the exact subregulation wording is still to be checked.",
+      ],
     },
     {
       id: "reg239-motor-car-exclusion",
@@ -317,6 +355,9 @@
       sourceLabel: SRC.arriveTowing.label,
       ...UNVERIFIED,
       params: { maxMassToDrivingAxleRatio: 5 },
+      notes: [
+        "A part-time 4x4 driven in 2WD may only have its rear axle driving; whether that changes the driving axle(s) for this rule is unconfirmed.",
+      ],
     },
 
     // ---------------------------------------------------------------- length (regulation not yet found)
@@ -333,6 +374,81 @@
       ...UNVERIFIED,
       params: { maxCombinationLengthM: 22, maxTrailerLengthM: 8, trailerLengthGvmBelowKg: 12000 },
       notes: ["Not used in any check until the regulation is found."],
+    },
+
+    // ---------------------------------------------------------------- manufacturer ratings (not law)
+    // Sources here explain the idea; the numbers themselves come from the
+    // owner's manual / compliance plate.
+    {
+      id: "maker-payload",
+      category: "manufacturer",
+      title: "Payload",
+      summary:
+        "Payload is GVM minus tare. Everything you carry counts against it: people, fuel not included in the tare, accessories (canopy, roof rack, rooftop tent, drawers, fridge), water, gear and the tow ball mass of the trailer.",
+      regulation: "Vehicle manufacturer's GVM (compliance plate / owner's manual)",
+      sourceUrl: SRC.carsCoZa.url,
+      sourceLabel: SRC.carsCoZa.label,
+      moreSources: [src("carmag")],
+      ...UNVERIFIED,
+    },
+    {
+      id: "maker-gcm",
+      category: "manufacturer",
+      title: "Combination mass (GCM)",
+      summary:
+        "The loaded vehicle plus the loaded trailer must not weigh more than the GCM. A heavily loaded vehicle leaves less room for the trailer, even when the trailer is within the towing capacity.",
+      regulation: "Vehicle manufacturer's GCM (owner's manual)",
+      sourceUrl: SRC.carsCoZa.url,
+      sourceLabel: SRC.carsCoZa.label,
+      moreSources: [src("carmag")],
+      ...UNVERIFIED,
+    },
+    {
+      id: "maker-towing-capacity",
+      category: "manufacturer",
+      title: "Towing capacity",
+      summary:
+        "The manufacturer rates the heaviest trailer the vehicle may tow: one figure for a braked trailer and a lower one for an unbraked trailer. This is a rating, not the legal limit; reg 151 can set a lower legal limit.",
+      regulation: "Vehicle manufacturer's towing capacity (owner's manual)",
+      sourceUrl: SRC.carmag.url,
+      sourceLabel: SRC.carmag.label,
+      moreSources: [src("arriveExpert")],
+      ...UNVERIFIED,
+    },
+    {
+      id: "maker-towball-max",
+      category: "manufacturer",
+      title: "Maximum tow ball mass",
+      summary:
+        "The manufacturer's maximum vertical load on the tow ball (and on the towbar's own plate, if that is lower). The tow ball mass also counts against payload.",
+      regulation: "Vehicle / towbar manufacturer's rating (owner's manual, towbar plate)",
+      sourceUrl: SRC.carmag.url,
+      sourceLabel: SRC.carmag.label,
+      ...UNVERIFIED,
+    },
+    {
+      id: "maker-axle-ratings",
+      category: "manufacturer",
+      title: "Axle ratings",
+      summary:
+        "Each axle has a maximum load (gross axle massload) set by the manufacturer. Tow ball mass acts behind the rear axle like a lever: it adds more than its own mass to the rear axle and takes some load off the front.",
+      regulation: "Vehicle manufacturer's axle ratings (compliance plate / owner's manual)",
+      sourceUrl: SRC.carsCoZa.url,
+      sourceLabel: SRC.carsCoZa.label,
+      ...UNVERIFIED,
+      notes: [
+        "Estimate used: extra rear axle load = tow ball mass × (wheelbase + rear overhang) ÷ wheelbase; front axle load drops by tow ball mass × rear overhang ÷ wheelbase. Rear overhang is measured from the rear axle centre to the tow ball.",
+      ],
+    },
+    {
+      id: "maker-trailer-gvm",
+      category: "manufacturer",
+      title: "Trailer within its own GVM",
+      summary: "The loaded trailer must not weigh more than its own plated GVM. Its load capacity is its GVM minus its tare.",
+      regulation: "Trailer manufacturer's GVM (trailer licence disc / compliance plate)",
+      sourceUrl: SRC.carsCoZa.url,
+      sourceLabel: SRC.carsCoZa.label,
+      ...UNVERIFIED,
     },
 
     // ---------------------------------------------------------------- not law
@@ -373,18 +489,51 @@
         { ruleId: "reg151-trailer-brakes", text: "A braked trailer whose GVM is more than your tare needs a service brake the driver can operate. A typical bakkie tare is about 2 000–2 300 kg, so an overrun-braked trailer is capped at your tare." },
         { ruleId: "reg151-plated-gvm", text: "The trailer's plated GVM counts, not what it weighs on the day." },
         { ruleId: "reg99-licence-codes", text: "Code B stops at a trailer GVM of 750 kg. Heavier needs EB." },
-        { ruleId: null, text: "The vehicle's GCM and payload also limit you: the loaded vehicle plus tow ball mass eats into what's left (manufacturer ratings, coming soon in this tool)." },
+        { ruleId: "maker-gcm", text: "The vehicle's GCM and payload also limit you: the loaded vehicle plus tow ball mass eats into what's left. Fill in the manufacturer ratings and your load to see how much." },
       ],
       example: {
         vehicleType: "goodsVehicle",
         tareKg: 2100,
-        gvmKg: 3100, // typical double-cab figure, only so the example fills every legal check
+        // Illustrative figures for a typical double cab, not any specific model.
+        gvmKg: 3100,
+        drive: "4wd",
         factoryRatingKg: 3500,
+        unbrakedCapacityKg: 750,
+        gcmKg: 5850,
+        maxTowballKg: 350,
         trailerGvmKg: 2500,
-        text: "A bakkie with a tare of 2 100 kg (GVM 3 100 kg) and a factory towing rating of 3 500 kg, towing a caravan plated at 2 500 kg with overrun brakes: not legal. The legal maximum on overrun brakes is a trailer GVM of 2 100 kg (the tare).",
+        towballKg: 200,
+        loadItems: [
+          { preset: "person", qty: 2 },
+          { preset: "canopy" },
+          { preset: "fridge" },
+          { preset: "gear" },
+        ],
+        text: "A bakkie with a tare of 2 100 kg and a factory towing rating of 3 500 kg, towing a caravan plated at 2 500 kg with overrun brakes: not legal. The legal maximum on overrun brakes is a trailer GVM of 2 100 kg (the tare).",
       },
     },
   };
+
+  // Display settings (not law): when a mass counts as "close to the limit" (amber).
+  const settings = { nearLimitFraction: 0.95 };
+
+  // Load list presets. Typical starting masses only, NOT data about any product:
+  // the UI asks people to replace them with their own weighed figures.
+  // perUnit: what "Qty" counts ("each" or "litre").
+  const loadPresets = [
+    { id: "person", label: "Person (driver or passenger)", kg: 80, qty: 1, perUnit: "each" },
+    { id: "diesel", label: "Diesel not included in tare", kg: 0.84, qty: 80, perUnit: "litre" },
+    { id: "petrol", label: "Petrol not included in tare", kg: 0.74, qty: 80, perUnit: "litre" },
+    { id: "water", label: "Water", kg: 1, qty: 40, perUnit: "litre" },
+    { id: "canopy", label: "Canopy", kg: 70, qty: 1, perUnit: "each" },
+    { id: "roof-rack", label: "Roof rack", kg: 25, qty: 1, perUnit: "each" },
+    { id: "rooftop-tent", label: "Rooftop tent", kg: 60, qty: 1, perUnit: "each" },
+    { id: "drawers", label: "Drawer system", kg: 60, qty: 1, perUnit: "each" },
+    { id: "fridge", label: "Fridge with contents", kg: 35, qty: 1, perUnit: "each" },
+    { id: "recovery", label: "Recovery gear", kg: 25, qty: 1, perUnit: "each" },
+    { id: "gear", label: "Camping gear / luggage", kg: 50, qty: 1, perUnit: "each" },
+    { id: "custom", label: "Other item", kg: 0, qty: 1, perUnit: "each" },
+  ];
 
   const byId = {};
   rules.forEach((r) => {
@@ -396,6 +545,8 @@
     rules,
     byId,
     explainers,
+    settings,
+    loadPresets,
     get(id) {
       const rule = byId[id];
       if (!rule) throw new Error("Unknown rule id: " + id);

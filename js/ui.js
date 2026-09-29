@@ -30,22 +30,33 @@
     return el("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, text);
   }
 
+  // Law (legal / definition) is verified against the gazette; other rules
+  // only have their explanatory source checked.
   function verifiedBadge(rule) {
-    return rule.verified
-      ? el("span", { class: "badge badge--verified", title: "Checked against the gazetted regulations" }, "Verified")
-      : el(
+    const isLaw = rule.category === "legal" || rule.category === "definition";
+    if (rule.verified)
+      return el(
+        "span",
+        { class: "badge badge--verified", title: isLaw ? "Checked against the gazetted regulations" : "Source checked" },
+        isLaw ? "Verified" : "Source checked"
+      );
+    return isLaw
+      ? el(
           "span",
           { class: "badge badge--unverified", title: "Not yet checked against the gazetted regulations" },
           "Unverified: confirm with DLTC"
-        );
+        )
+      : el("span", { class: "badge badge--unverified", title: "The linked source has not been checked yet" }, "Source not checked");
   }
 
-  // One-line citation: regulation (linked to source) + badge.
+  // One-line citation: regulation (linked to source) + badge. Definitions
+  // share a regulation (s1), so they also name the term.
   function citation(rule) {
+    const text = rule.category === "definition" ? `${rule.regulation}: ${rule.title}` : rule.regulation;
     return el(
       "li",
       { class: "cite" },
-      externalLink(rule.sourceUrl, rule.regulation),
+      externalLink(rule.sourceUrl, text),
       " ",
       el("span", { class: "cite-source" }, "via " + rule.sourceLabel),
       " ",

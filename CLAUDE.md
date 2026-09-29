@@ -12,7 +12,10 @@ Plain HTML/CSS/vanilla JS. **No build step, no framework.** All calculations run
 index.html          The checker: form (left/top) + results (right/below)
 sources.html        Every rule with regulation, sources, verified status, last-checked date
 js/rules.js         THE data file: every legal threshold, rule text, citation, verified flag
-js/checks.js        Pure check functions (no DOM): licence (reg 99), brakes (reg 151), speed (reg 292/293)
+js/checks.js        Pure legal checks (no DOM): licence (reg 99), brakes (reg 151), speed (reg 292/293),
+                    overloading + driving axle (reg 239), and rigMasses(), the shared mass model
+js/ratings.js       Pure manufacturer checks (not law): payload, GCM, towing capacity, tow ball,
+                    trailer GVM, axles, and trailerLimit() ("heaviest trailer" tile)
 js/ui.js            Shared DOM helpers: el(), citation(), badges (text via textContent only)
 js/app.js           Wires the checker form to checks.js and renders results
 js/sources.js       Builds sources.html from rules.js
@@ -35,11 +38,18 @@ tests/run.ps1       Runs the tests in headless Edge: powershell -ExecutionPolicy
 2. In `rules.js`: set `sourceUrl`/`sourceLabel` to the official text, update `regulation` (add the GN number), set `official: true`, `verified: true`, `lastChecked: "YYYY-MM-DD"`. Move the old secondary link to `moreSources` if it's still useful.
 3. Fix any `params` or `summary` the gazette contradicts, then run the tests.
 
+## Mass model (rigMasses in checks.js)
+
+- Best source first: weighbridge readings (taken **with the trailer hitched**) > entered trailer actual mass > trailer plated GVM; the vehicle falls back to tare + load list + tow ball mass.
+- The tow ball mass is carried by the vehicle (counts against payload/GVM and the rear axle) but is part of the trailer's mass, so the combination counts it **once**: combined = (vehicle − tow ball) + trailer.
+- Legal limits (reg 151, licence) apply to the trailer's **plated GVM**; manufacturer limits to its **actual mass**. The heaviest-trailer tile says so.
+- "Close to the limit" (amber) is `settings.nearLimitFraction` in rules.js. Load list presets (`loadPresets`) are rough starting masses, labelled as guesses in the UI.
+
 ## Build status
 
-Done (brief build steps 1–2): `rules.js` with every rule in the brief, legal checks 4.1–4.3 with results UI and citations, sources page, worked-example loader (`index.html#example`), print styles.
+Done (brief build steps 1–3): `rules.js` with every rule in the brief, legal checks 4.1–4.4 (licence, brakes, speed, reg 239 overloading and driving axle), manufacturer panel (payload, GCM, towing capacity, tow ball, trailer GVM, axle loads with lever estimate), heaviest-trailer tile, load list builder, weighbridge inputs, sources page, worked-example loader (`index.html#example`), print styles.
 
-Next: payload / GCM / tow ball (manufacturer panel, brief §5) and reg 239 overloading checks; "What can I tow?" mode; motor car vs goods vehicle comparison; rig diagram; print summary; GoatCounter tag (page views only, like the rest of psyphin.co.za) and a `projects.js` card on psyphin.co.za at launch.
+Next (brief step 4 onward): "What can I tow?" mode; motor car vs goods vehicle comparison; rig diagram; print summary; GoatCounter tag (page views only, like the rest of psyphin.co.za) and a `projects.js` card on psyphin.co.za at launch.
 
 ## Preview and test
 
