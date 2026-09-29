@@ -422,12 +422,99 @@
     );
   }
 
+  // ---------------------------------------------------------------- print sheet (weighbridge day)
+  const PRINT_TITLE = {
+    check: "Rig check: weighbridge summary",
+    tow: "What can I tow?",
+    compare: "Motor car vs goods vehicle",
+  };
+  const VEHICLE_NAME = { motorCar: "Motor car", goodsVehicle: "Goods vehicle" };
+  const DRIVE_NAME = { rwd: "2WD, rear-wheel drive", fwd: "2WD, front-wheel drive", "4wd": "4x4 / AWD" };
+  const BRAKE_FITTED = { none: "None (parking brake only)", overrun: "Overrun brake", service: "Service brake (driver-operated)" };
+
+  function kgOrNull(v) {
+    return C.isNum(v) ? C.kg(v) : null;
+  }
+
+  function renderPrintSheet(input) {
+    const rows = [];
+    const add = (label, value) => {
+      if (value !== null && value !== undefined && value !== "") rows.push(el("tr", null, el("th", { scope: "row" }, label), el("td", null, value)));
+    };
+    if (mode !== "compare") add("Vehicle type (as registered)", VEHICLE_NAME[input.vehicleType]);
+    add("Tare", kgOrNull(input.tareKg));
+    add("GVM", kgOrNull(input.gvmKg));
+    add("GCM", kgOrNull(input.gcmKg));
+    if (mode !== "tow") add("Drive", DRIVE_NAME[input.drive]);
+    add("Licence code", input.licenceCode);
+    add("Towing capacity, braked", kgOrNull(input.brakedCapacityKg));
+    add("Towing capacity, unbraked", kgOrNull(input.unbrakedCapacityKg));
+    if (mode !== "tow") {
+      add("Maximum tow ball mass", kgOrNull(input.maxTowballKg));
+      add("Axle ratings", C.isNum(input.frontAxleRatingKg) || C.isNum(input.rearAxleRatingKg)
+        ? `front ${kgOrNull(input.frontAxleRatingKg) || "—"}, rear ${kgOrNull(input.rearAxleRatingKg) || "—"}`
+        : null);
+      if (input.trailers.length) {
+        add(
+          input.trailers.length > 1 ? "Trailers, plated GVM" : "Trailer plated GVM",
+          input.trailers.map((t) => kgOrNull(t.gvmKg) || "—").join(" + ")
+        );
+        add("Trailer brakes", BRAKE_FITTED[input.trailerBrake]);
+        add("Tow ball mass", kgOrNull(input.towballKg));
+        add("Trailer tare", kgOrNull(input.trailerTareKg));
+        add("Trailer actual mass", kgOrNull(input.trailerActualKg));
+      } else {
+        add("Trailer", "None");
+      }
+    }
+    const items = input.loadItems.filter((it) => it.kg > 0 && it.qty > 0);
+    if (items.length) {
+      add(
+        "Load in the vehicle",
+        items.map((it) => `${it.label}: ${it.qty} × ${it.kg} kg`).join("; ") +
+          ` (total ${C.kg(items.reduce((s, it) => s + it.kg * it.qty, 0))})`
+      );
+    }
+
+    const blank = () => el("td", { class: "write-in" }, "");
+    const writeIn =
+      mode === "check"
+        ? el(
+            "table",
+            { class: "print-table write-in-table" },
+            el("caption", null, "At the weighbridge: write in the readings (trailer hitched, loaded for the trip)"),
+            el("thead", null, el("tr", null, el("th", null, "Reading"), el("th", null, "Mass"), el("th", null, "Limit"))),
+            el(
+              "tbody",
+              null,
+              [
+                ["Front axle", kgOrNull(input.frontAxleRatingKg) ? `rating ${kgOrNull(input.frontAxleRatingKg)}` : "axle rating"],
+                ["Rear axle", kgOrNull(input.rearAxleRatingKg) ? `rating ${kgOrNull(input.rearAxleRatingKg)}` : "axle rating"],
+                ["Trailer axle(s)", ""],
+                ["Tow ball", kgOrNull(input.maxTowballKg) ? `maximum ${kgOrNull(input.maxTowballKg)}` : ""],
+                ["Vehicle total (front + rear)", kgOrNull(input.gvmKg) ? `GVM ${kgOrNull(input.gvmKg)}` : "GVM"],
+                ["Everything (all axles)", kgOrNull(input.gcmKg) ? `GCM ${kgOrNull(input.gcmKg)}` : "GCM"],
+              ].map(([label, limit]) => el("tr", null, el("th", { scope: "row" }, label), blank(), el("td", null, limit)))
+            )
+          )
+        : null;
+
+    document.getElementById("print-sheet").replaceChildren(
+      el("h2", null, PRINT_TITLE[mode]),
+      el("p", { class: "print-meta" }, "Printed " + new Date().toLocaleDateString("en-ZA", { day: "numeric", month: "long", year: "numeric" }) + " from psyphin.co.za. Guidance only, not legal advice."),
+      rows.length ? el("table", { class: "print-table" }, el("caption", null, "What was entered"), el("tbody", null, rows)) : null,
+      writeIn
+    );
+  }
+
   function render() {
     syncTrailerFields();
     const input = readInput();
     updateLoadTotal(input.loadItems);
     renderTow(input);
     renderCompare(input);
+    document.getElementById("rig-body").replaceChildren(window.TOWING_DIAGRAM.renderRigDiagram(M.rigDiagram(input)));
+    renderPrintSheet(input);
 
     const legal = C.runLegalChecks(input);
     overallBox.className = "overall overall--" + legal.overall;
@@ -511,6 +598,13 @@
   document.addEventListener("click", (e) => {
     if (e.target.closest("[data-load-example]")) loadExample();
   });
+
+  document.querySelectorAll("[data-print]").forEach((b) =>
+    b.addEventListener("click", () => {
+      render(); // fresh date and figures on the sheet
+      window.print();
+    })
+  );
 
   // Scroll without touching the URL hash (it holds the mode).
   document.querySelector(".jump-link").addEventListener("click", (e) => {

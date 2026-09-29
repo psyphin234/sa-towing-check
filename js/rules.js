@@ -514,6 +514,23 @@
     },
   };
 
+  // What still needs checking, shown on sources.html. Remove an entry once it
+  // is settled (and update the rules it names).
+  const openQuestions = [
+    {
+      text: "Check every rule against the official gazetted National Road Traffic Regulations (as amended) and cite the Government Notice number.",
+      ruleIds: [],
+    },
+    { text: "Does reg 151 use the trailer's plated GVM rather than what it actually weighs?", ruleIds: ["reg151-plated-gvm"] },
+    { text: "Does reg 239(1) leave out motor cars (so overloading an SUV is not that offence)?", ruleIds: ["reg239-motor-car-exclusion"] },
+    { text: "Exact wording of reg 239(1): does it cover GVM, each gross axle massload and GCM?", ruleIds: ["reg239-overloading"] },
+    { text: "For a part-time 4x4 driven in 2WD, which axles count as driving axles under reg 239(3)?", ruleIds: ["reg239-driving-axle"] },
+    { text: "With two trailers, does the 750 kg licence threshold apply to the sum of the trailer GVMs?", ruleIds: ["reg99-licence-codes"] },
+    { text: "Which sign must a combination limited to 80 km/h display?", ruleIds: ["reg293-goods-towing-speed"] },
+    { text: "Which regulation sets the 22 m combination length and 8 m trailer length?", ruleIds: ["length-limits"] },
+    { text: "Is there a legal limit on tow ball (nose) mass, or only the manufacturer's rating?", ruleIds: ["guidance-towball-mass"] },
+  ];
+
   // Display settings (not law): when a mass counts as "close to the limit" (amber).
   const settings = { nearLimitFraction: 0.95 };
 
@@ -547,6 +564,7 @@
     explainers,
     settings,
     loadPresets,
+    openQuestions,
     get(id) {
       const rule = byId[id];
       if (!rule) throw new Error("Unknown rule id: " + id);

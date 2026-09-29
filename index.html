@@ -228,15 +228,28 @@
 
         <div class="form-actions">
           <button type="button" id="load-example" class="button button--ghost" data-modes="check">Load worked example</button>
+          <button type="button" class="button button--ghost" data-print>Print summary</button>
           <button type="reset" class="button button--ghost">Clear</button>
         </div>
       </form>
 
       <section class="results" aria-labelledby="results-title">
         <h2 id="results-title" class="visually-hidden">Results</h2>
+
+        <div class="results-actions">
+          <button type="button" class="button button--ghost" data-print>Print summary</button>
+        </div>
+
+        <!-- Printed only: what was entered, and blanks to fill in at the weighbridge -->
+        <section id="print-sheet" class="print-only" aria-hidden="true"></section>
         <div id="overall" class="overall" role="status" aria-live="polite" data-modes="check"></div>
 
         <section id="trailer-limit" class="limit-tile" aria-labelledby="limit-title" data-modes="check"></section>
+
+        <section class="panel panel--rig" aria-labelledby="rig-title" data-modes="check">
+          <h2 id="rig-title">Your rig at a glance</h2>
+          <div id="rig-body"></div>
+        </section>
 
         <section class="panel panel--legal" aria-labelledby="legal-title" data-modes="check">
           <h2 id="legal-title">Legal requirements <span class="panel-tag">Law</span></h2>
@@ -288,6 +301,7 @@
   <script src="js/ratings.js"></script>
   <script src="js/modes.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/diagram.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

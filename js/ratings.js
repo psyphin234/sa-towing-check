@@ -362,6 +362,60 @@
     return { limitKg, candidates, notes, reason: null };
   }
 
+  // ------------------------------------------------------------------ rig diagram data (SPEC §7)
+  // Mass at each point of the rig, with its limit and status. kg is null when
+  // unknown (axle loads need weighbridge readings; the tow ball's effect on
+  // them can be estimated with the lever).
+  function rigDiagram(input) {
+    const m = rigMasses(input);
+    const wb = input.weighbridge || {};
+    const point = (kgValue, limit, source, limitLabel) => ({
+      kg: isNum(kgValue) ? kgValue : null,
+      limit: isNum(limit) ? limit : null,
+      limitLabel,
+      source,
+      status: !isNum(kgValue) ? "none" : isNum(limit) ? level(kgValue, limit) : "info",
+    });
+    const lever =
+      m.towballKg && m.trailerCount && isNum(input.wheelbaseMm) && isNum(input.rearOverhangMm)
+        ? towballLever(m.towballKg, input.wheelbaseMm, input.rearOverhangMm)
+        : null;
+
+    const front = point(wb.frontAxleKg, input.frontAxleRatingKg, "weighbridge", "rating");
+    const rear = point(wb.rearAxleKg, input.rearAxleRatingKg, "weighbridge", "rating");
+    if (front.kg === null && lever) front.changeKg = -lever.frontReliefKg;
+    if (rear.kg === null && lever) rear.changeKg = lever.rearAddKg;
+
+    let trailerAxles = null;
+    if (m.trailerCount) {
+      if (isNum(wb.trailerAxlesKg)) trailerAxles = point(wb.trailerAxlesKg, null, "weighbridge");
+      else if (m.trailer && m.towballKg) trailerAxles = point(m.trailer.kg - m.towballKg, null, "estimate");
+      else trailerAxles = point(null, null, null);
+      if (trailerAxles.kg !== null) trailerAxles.word = "No rating asked for";
+    }
+    let trailer = null;
+    if (m.trailer) {
+      // A trailer counted at its plated GVM can't be checked against that same GVM.
+      const plated = m.trailer.source === "plated";
+      trailer = point(m.trailer.kg, plated ? null : m.trailerPlatedKg, m.trailer.source, "plated GVM");
+      if (plated) trailer.word = "Not weighed";
+    }
+
+    return {
+      vehicleType: input.vehicleType,
+      trailerCount: m.trailerCount,
+      hasData: Boolean(m.vehicle),
+      front,
+      rear,
+      towball: m.trailerCount ? point(m.towballKg, input.maxTowballKg, "entered", "maximum") : null,
+      trailerAxles,
+      vehicle: m.vehicle ? point(m.vehicle.kg, input.gvmKg, m.vehicle.source, "GVM") : null,
+      trailer,
+      combined: m.combined ? point(m.combined.kg, input.gcmKg, m.combined.source, "GCM") : null,
+      lever,
+    };
+  }
+
   function runMakerChecks(input) {
     const checks = [
       payloadCheck(input),
@@ -377,6 +431,7 @@
   const api = {
     runMakerChecks,
     trailerLimit,
+    rigDiagram,
     payloadCheck,
     gcmCheck,
     towingCapacityCheck,

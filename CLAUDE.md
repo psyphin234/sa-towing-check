@@ -17,6 +17,7 @@ js/checks.js        Pure legal checks (no DOM): licence (reg 99), brakes (reg 15
 js/ratings.js       Pure manufacturer checks (not law): payload, GCM, towing capacity, tow ball,
                     trailer GVM, axles, and trailerLimit() ("heaviest trailer" tile)
 js/modes.js         Pure logic for the other two modes: whatCanITow() and compareBodyTypes()
+js/diagram.js       Draws the rig diagram (SVG + table) from ratings.rigDiagram()
 js/ui.js            Shared DOM helpers: el(), citation(), badges (text via textContent only)
 js/app.js           Wires the form to all of the above, the mode switch and the load list; renders results
 js/sources.js       Builds sources.html from rules.js
@@ -54,11 +55,17 @@ One form, three modes (buttons above the form; the URL hash holds the mode: none
 - `[hidden] { display: none !important }` in style.css is what makes hiding work on elements with their own `display` rule. Keep it.
 - **Check my rig**: every legal and manufacturer check. **What can I tow?**: no trailer inputs; one card per brake type with the legal cap (plated GVM) and manufacturer cap (actual mass), plus speed thresholds for goods vehicles. **Car vs bakkie**: no vehicle-type input; runs the legal checks twice (motor car / goods vehicle) and tabulates the differences using each check's `data` field.
 
+## Diagram, print and sources
+
+- **Rig diagram** ("Your rig at a glance", check mode): a side-view SVG plus a table of the same figures. Axle loads only appear with weighbridge readings; otherwise the tow ball's lever effect is shown if wheelbase and overhang are entered. Text stays in text colours; status is a coloured bar/arrow and a word in the table.
+- **Print summary** (`data-print` buttons, `window.print()`): print CSS hides the form and controls, switches to light colours, and shows `#print-sheet` (built in app.js): what was entered, and in check mode a write-in table for weighbridge readings with the limits pre-filled. Check changes with Edge: `msedge --headless=new --print-to-pdf=out.pdf "file:///…/index.html#example"`.
+- **Sources page**: status summary per group, "Still to check" (`openQuestions` in rules.js; remove an entry once settled), then every rule with an anchor. Citation badges in the checker link to `sources.html#<rule-id>`.
+
 ## Build status
 
-Done (brief build steps 1–4): `rules.js` with every rule in the brief, legal checks 4.1–4.4 (licence, brakes, speed, reg 239 overloading and driving axle), manufacturer panel (payload, GCM, towing capacity, tow ball, trailer GVM, axle loads with lever estimate), heaviest-trailer tile, load list builder, weighbridge inputs, "What can I tow?" and motor car vs goods vehicle modes, sources page, worked-example loader, print styles.
+Done (brief build steps 1–5): `rules.js` with every rule in the brief, legal checks 4.1–4.4, manufacturer panel, heaviest-trailer tile, load list builder, weighbridge inputs, "What can I tow?" and motor car vs goods vehicle modes, rig diagram, print summary, sources page with open questions, worked-example loader.
 
-Next (brief step 5 onward): rig diagram (SVG, masses on each axle and the tow ball); printable weighbridge-day summary; then mobile polish, GoatCounter tag (page views only, like the rest of psyphin.co.za), GitHub Pages deploy and a `projects.js` card on psyphin.co.za.
+Next (brief step 6): mobile polish, GoatCounter tag (page views only, like the rest of psyphin.co.za), GitHub Pages deploy and a `projects.js` card on psyphin.co.za. Before launch (brief §2.6): replace secondary citations with the gazetted text where possible.
 
 ## Preview and test
 

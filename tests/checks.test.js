@@ -430,6 +430,52 @@
     );
   });
 
+  // ------------------------------------------------------------ rig diagram data
+  test("diagram: example rig, estimated masses", () => {
+    const d = M.rigDiagram(exampleRig());
+    eq(d.hasData, true);
+    eq(d.vehicle.kg, 2615, "vehicle incl. tow ball");
+    eq(d.vehicle.status, "pass");
+    eq(d.front.kg, null, "axles unknown without weighbridge");
+    eq(d.front.status, "none");
+    eq(d.towball.kg, 200);
+    eq(d.towball.status, "pass");
+    eq(d.trailerAxles.kg, 2300, "trailer axle = trailer - tow ball");
+    eq(d.trailerAxles.source, "estimate");
+    eq(d.trailer.limit, null, "plated trailer not compared with itself");
+    eq(d.trailer.status, "info");
+    eq(d.combined.kg, 4915);
+  });
+  test("diagram: lever estimate shows the tow ball's effect on the axles", () => {
+    const d = M.rigDiagram(exampleRig({ wheelbaseMm: 3085, rearOverhangMm: 1100 }));
+    eq(Math.round(d.rear.changeKg), 271);
+    eq(Math.round(d.front.changeKg), -71);
+  });
+  test("diagram: weighbridge readings against axle ratings", () => {
+    const d = M.rigDiagram(
+      exampleRig({
+        frontAxleRatingKg: 1400,
+        rearAxleRatingKg: 1800,
+        trailerActualKg: 2400,
+        weighbridge: { frontAxleKg: 1150, rearAxleKg: 1790, trailerAxlesKg: 2150 },
+      })
+    );
+    eq(d.front.status, "pass");
+    eq(d.rear.status, "warn");
+    eq(d.trailerAxles.source, "weighbridge");
+    eq(d.trailer.kg, 2350, "weighed trailer = axles + tow ball");
+    eq(d.trailer.status, "pass", "weighed trailer compared with its plated GVM");
+  });
+  test("diagram: no trailer, and no data", () => {
+    const d = M.rigDiagram(bakkie({ tareKg: 2000, gvmKg: 3000 }));
+    eq(d.towball, null);
+    eq(d.trailerAxles, null);
+    eq(M.rigDiagram(bakkie({ gvmKg: 3000 })).hasData, false);
+  });
+  test("open questions point at real rules", () => {
+    R.openQuestions.forEach((q) => q.ruleIds.forEach((id) => R.get(id)));
+  });
+
   // ------------------------------------------------------------ What can I tow?
   const MD = window.TOWING_MODES;
   const row = (t, brake) => t.rows.find((r) => r.brake === brake);

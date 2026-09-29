@@ -19,7 +19,7 @@
       if (k === "class") node.className = v;
       else node.setAttribute(k, v === true ? "" : v);
     });
-    children.flat().forEach((c) => {
+    children.flat(Infinity).forEach((c) => {
       if (c === null || c === undefined || c === false) return;
       node.appendChild(typeof c === "string" ? document.createTextNode(keepNumbersTogether(c)) : c);
     });
@@ -62,7 +62,8 @@
       " ",
       el("span", { class: "cite-source" }, "via " + rule.sourceLabel),
       " ",
-      verifiedBadge(rule)
+      // the badge links to this rule's entry on the sources page
+      el("a", { class: "badge-link", href: "sources.html#" + rule.id, "aria-label": "Verification status and all sources for " + rule.title }, verifiedBadge(rule))
     );
   }
 
