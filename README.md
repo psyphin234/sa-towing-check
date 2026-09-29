@@ -12,7 +12,7 @@ Two more modes: **What can I tow?** (the heaviest trailer for each type of brake
 
 A diagram shows the mass on each axle and the tow ball, and **Print summary** gives a sheet for weighbridge day, with blanks for the readings.
 
-Every rule links to its source, and rules not yet checked against the official gazetted regulations are marked as unverified. See [sources.html](sources.html).
+Every legal rule links to the official regulation it comes from (checked against the gazetted National Road Traffic Regulations and Act, as amended), and the few points the regulations don't settle are marked as unverified. See [sources.html](sources.html).
 
 Everything runs in your browser; nothing you enter is sent anywhere.
 

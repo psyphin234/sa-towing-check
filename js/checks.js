@@ -149,7 +149,8 @@
   function requiredBrake(trailerGvmKg, tareKg) {
     const p = R.get("reg151-trailer-brakes").params;
     if (trailerGvmKg > p.heavyTrailerMinKg) return { level: "service", clause: p.clauses.overHeavy };
-    if (trailerGvmKg > tareKg) return { level: "service", clause: p.clauses.overTare };
+    if (trailerGvmKg > tareKg)
+      return { level: "service", clause: trailerGvmKg > p.lightTrailerMaxKg ? p.clauses.overTare : p.clauses.lightOverTare };
     if (trailerGvmKg > p.lightTrailerMaxKg) return { level: "overrun", clause: p.clauses.heavyUpToTare };
     if (trailerGvmKg > tareKg * p.unbrakedTareFraction)
       return { level: "overrun", clause: p.clauses.lightOverTareHalf };
@@ -232,9 +233,9 @@
         "reg293-goods-towing-speed",
       ]);
     const noTowingLimit = { limitKmh: null, sign: false };
-    if (t.count === 0)
-      return result("speed", title, "info", `No trailer entered. ${generalText}`, ["reg292-general-speed"], null, noTowingLimit);
     if (input.vehicleType === "motorCar") {
+      if (t.count === 0)
+        return result("speed", title, "info", `No trailer entered. ${generalText}`, ["reg292-general-speed"], null, noTowingLimit);
       return result(
         "speed",
         title,
@@ -246,6 +247,7 @@
       );
     }
 
+    // Goods vehicle: reg 293 uses its GVM alone, or with trailers the sum of all GVMs.
     const ids = ["reg293-goods-towing-speed"];
     if (!isNum(input.gvmKg))
       return result("speed", title, "incomplete", "Enter the vehicle's GVM.", ids);
@@ -253,36 +255,34 @@
     if (t.count > p.maxTrailers)
       return result("speed", title, "info", `More than ${p.maxTrailers} trailers is outside what this tool checks.`, ids);
 
+    const towing = t.count > 0;
     const combined = input.gvmKg + t.sumKg;
-    const sumText = `Vehicle GVM ${kg(input.gvmKg)} + trailer GVM ${kg(t.sumKg)} = ${kg(combined)}`;
-    if (combined > p.combinedGvmHeavyOverKg) {
-      return result(
+    const sumText = towing
+      ? `Vehicle GVM ${kg(input.gvmKg)} + trailer GVM ${kg(t.sumKg)} = ${kg(combined)}`
+      : `Vehicle GVM ${kg(input.gvmKg)}`;
+    const signNotes = towing ? [R.get("reg293-speed-sign").notes[0]] : [];
+    const limited = (kmh, overKg, clause) =>
+      result(
         "speed",
         title,
         "warn",
-        `Maximum ${p.heavyLimitKmh} km/h. ${sumText}, over ${kg(p.combinedGvmHeavyOverKg)} (reg ${p.clauses.heavy}).`,
-        ids,
-        ["Speed-limit sign requirements for this class are not covered yet; confirm with your DLTC."],
-        { limitKmh: p.heavyLimitKmh, sign: false }
-      );
-    }
-    if (combined > p.combinedGvmOverKg) {
-      return result(
-        "speed",
-        title,
-        "warn",
-        `Maximum ${p.limitKmh} km/h, and a ${p.limitKmh} km/h sign must be displayed on the rear. ${sumText}, over ${kg(p.combinedGvmOverKg)} (reg ${p.clauses.limit}).`,
+        `Maximum ${kmh} km/h, and a ${kmh} km/h sign must be displayed on the rear. ${sumText}, over ${kg(overKg)} (reg ${clause}).`,
         ids.concat("reg293-speed-sign"),
-        null,
-        { limitKmh: p.limitKmh, sign: true }
+        signNotes,
+        { limitKmh: kmh, sign: true }
       );
-    }
+    if (combined > p.combinedGvmHeavyOverKg)
+      return limited(p.heavyLimitKmh, p.combinedGvmHeavyOverKg, towing ? p.clauses.heavy : p.clauses.soloHeavy);
+    if (combined > p.combinedGvmOverKg)
+      return limited(p.limitKmh, p.combinedGvmOverKg, towing ? p.clauses.limit : p.clauses.soloLimit);
     return result(
       "speed",
       title,
       "info",
-      `${sumText}, not over ${kg(p.combinedGvmOverKg)}, so the reg 293 towing limit does not apply. ${generalText}`,
-      ids.concat("reg292-general-speed"),
+      towing
+        ? `${sumText}, not over ${kg(p.combinedGvmOverKg)}, so the reg 293 limit does not apply. ${generalText}`
+        : `No trailer entered, and the GVM is not over ${kg(p.combinedGvmOverKg)}. ${generalText}`,
+      towing ? ids.concat("reg292-general-speed") : ["reg292-general-speed"],
       null,
       noTowingLimit
     );
@@ -353,8 +353,9 @@
         "overloading",
         title,
         "info",
-        "Reg 239 lists goods vehicles, minibuses, buses and tractors, not motor cars, so this offence (and the driving axle rule) does not apply to your vehicle. Its GVM, axle and GCM ratings still matter for safety and insurance: see Manufacturer ratings.",
-        ids.concat("reg239-motor-car-exclusion")
+        "Reg 239 lists goods vehicles, minibuses, buses and tractors, not motor cars, so its overloading offences (and the driving axle rule) do not apply to your vehicle. Its GVM, axle and GCM ratings still matter for safety and insurance: see Manufacturer limits.",
+        ids.concat("reg239-motor-car-exclusion"),
+        [R.get("reg239-motor-car-exclusion").notes[0]]
       );
     }
     if (!isNum(input.gvmKg)) return result("overloading", title, "incomplete", "Enter the vehicle's GVM.", ids);

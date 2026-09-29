@@ -45,7 +45,8 @@
       if (r.lastChecked !== null && !/^\d{4}-\d{2}-\d{2}$/.test(r.lastChecked))
         throw new Error(r.id + ".lastChecked must be YYYY-MM-DD or null");
       if (r.verified && !r.lastChecked) throw new Error(r.id + " is verified but has no lastChecked date");
-      if (!/^https:\/\//.test(r.sourceUrl)) throw new Error(r.id + ".sourceUrl must be https");
+      if (!/^https?:\/\//.test(r.sourceUrl)) throw new Error(r.id + ".sourceUrl must be a web link");
+      if (r.official && !r.verified) throw new Error(r.id + " cites official text but isn't marked verified");
     });
   });
 
@@ -86,6 +87,11 @@
     const r = C.requiredBrake(2101, 2100);
     eq(r.level, "service");
     eq(r.clause, "151(1)(b)(ii)");
+  });
+  test("151(1)(a)(iii): light trailer heavier than the tare needs a service brake", () => {
+    const r = C.requiredBrake(700, 600);
+    eq(r.level, "service");
+    eq(r.clause, "151(1)(a)(iii)");
   });
   test("151(1)(c): trailer over 3 500 kg needs service brake even under tare", () => {
     const r = C.requiredBrake(3600, 4000);
@@ -178,6 +184,37 @@
   });
   test("sum exactly 3 500 kg: reg 293 does not apply", () => {
     eq(C.speedCheck(bakkie({ gvmKg: 2800, trailers: trailer(700) })).status, "info");
+  });
+  test("sum over 9 000 kg: 80 km/h and an 80 km/h sign", () => {
+    const c = C.speedCheck(bakkie({ gvmKg: 6000, trailers: trailer(3500) }));
+    eq(c.status, "warn");
+    includes(c.reason, "Maximum 80 km/h, and a 80 km/h sign");
+    eq(c.data.sign, true);
+  });
+  test("goods vehicle over 3 500 kg GVM without a trailer: 100 km/h (293(1)(b)(iv)(aa))", () => {
+    const c = C.speedCheck(bakkie({ gvmKg: 4000 }));
+    eq(c.status, "warn");
+    includes(c.reason, "293(1)(b)(iv)(aa)");
+    eq(c.data.limitKmh, 100);
+  });
+  test("goods vehicle over 9 000 kg GVM without a trailer: 80 km/h (293(1)(a)(i))", () => {
+    const c = C.speedCheck(bakkie({ gvmKg: 9500 }));
+    includes(c.reason, "293(1)(a)(i)");
+    eq(c.data.limitKmh, 80);
+  });
+  test("light goods vehicle without a trailer: general limits", () => {
+    eq(C.speedCheck(bakkie({ gvmKg: 3100 })).status, "info");
+  });
+  test("motor car overloading note mentions tyre load limits (reg 238)", () => {
+    const c = C.overloadingCheck(car({ tareKg: 2000, gvmKg: 2600 }));
+    if (!c.notes.some((n) => n.indexOf("reg 238") !== -1)) throw new Error("missing reg 238 note");
+  });
+  test("legal rules and definitions are verified against official text", () => {
+    R.rules
+      .filter((r) => (r.category === "legal" || r.category === "definition") && r.id !== "def-vehicle-type-from-papers")
+      .forEach((r) => {
+        if (!r.verified || !r.official) throw new Error(r.id + " not verified against official text");
+      });
   });
   test("sum over 9 000 kg: 80 km/h", () => {
     const c = C.speedCheck(bakkie({ gvmKg: 6000, trailers: trailer(3500) }));

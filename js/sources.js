@@ -77,7 +77,7 @@
       "section",
       { class: "source-group", id: "open-questions" },
       el("h2", null, "Still to check"),
-      el("p", { class: "muted" }, "Until these are settled, the rules involved stay marked as unverified."),
+      el("p", { class: "muted" }, "Points the regulation text doesn't settle. The checker flags them where they apply; confirm them with your DLTC."),
       el(
         "ol",
         { class: "open-questions" },

@@ -30,15 +30,22 @@ tests/run.ps1       Runs the tests in headless Edge: powershell -ExecutionPolicy
 
 - **Every threshold lives in `rules.js`** (in a rule's `params`), next to its citation. `checks.js`, `app.js` and HTML must not hard-code legal numbers.
 - Every legal result cites its rule(s) via `ruleIds`; the UI renders each as regulation + source link + verified badge.
-- `verified: false` rules show "Unverified: confirm with DLTC". As of 2026-09-29 **all** rules are unverified: every source is secondary.
+- `verified: false` rules show "Unverified: confirm with DLTC". Since 2026-09-29 every legal rule and definition is verified against official text except `def-vehicle-type-from-papers` (how double cabs are registered isn't in the regulations). Manufacturer and guidance rules show "Source checked" once their explanatory source has been read (`SOURCE_CHECKED`).
+- Keep claims that aren't in the regulation (e.g. "most bakkies are registered as LDVs") out of a verified rule's `summary`; put them in `notes`, starting "Not from the regulation:".
 - Legal checks (blue "SA law" tag) are kept separate from manufacturer limits (purple "Vehicle maker" / "Manufacturer" tag). Wording: say "SA law" and "manufacturer limit"; avoid "not legal" for manufacturer limits, because NOT LEGAL is the red status for breaking a rule.
 - The disclaimer stays on every results view.
 
 ## Verifying a rule
 
-1. Find the rule in the official gazetted National Road Traffic Regulations (as amended).
-2. In `rules.js`: set `sourceUrl`/`sourceLabel` to the official text, update `regulation` (add the GN number), set `official: true`, `verified: true`, `lastChecked: "YYYY-MM-DD"`. Move the old secondary link to `moreSources` if it's still useful.
-3. Fix any `params` or `summary` the gazette contradicts, then run the tests.
+Official texts used (2026-09-29), all fetched and read in full for the rules concerned:
+- Regulations GN R225 of 2000, consolidated to 9 March 2012: KZN Department of Transport PDF (http only; WebFetch forces https and fails, so `curl` it and use `pdftotext`).
+- Amendments since then: GN R846 of 2014 (changed regs 1, 99, 239, 293(2)(a)) and GN R1408 of 2016 (added reg 293(1)(b)(iv)), both on gov.za. The 2013 and 2016-fee amendments and GN 45901 of 2022 (forms only) don't touch these rules; amendment list from rte.mobilitas.co.za.
+- The Act as published (RTMC PDF) for GVM, GCM and tare.
+
+To re-verify after a new amendment:
+1. Read the amendment in the Government Gazette (gov.za / gpwonline) and note which regulations it changes.
+2. In `rules.js`: update `summary`, `params`, `regulation` (add the GN number) and sources; set `lastChecked: "YYYY-MM-DD"`. Rules the text doesn't settle stay `verified: false` and get an `openQuestions` entry.
+3. Run the tests.
 
 ## Mass model (rigMasses in checks.js)
 
@@ -65,13 +72,15 @@ One form, three modes (buttons above the form; the URL hash holds the mode: none
 
 - Favicons are a copy of psyphin.co.za's set; change both together. `og-image.jpg` (1200x630) is a crop of the rig diagram, used by both pages' Open Graph tags.
 - GoatCounter (cookie-free page visits, shared dashboard https://psyphin.goatcounter.com/) is on index.html and sources.html, just before `</body>`. It never sees form inputs (they are never sent anywhere); the privacy line on the checker says visits are counted. Don't add it to tests/.
-- The psyphin.co.za card (`projects.js` there, image `assets/img/projects/sa-towing-check.jpg`) is amber "In testing" while the rules are unverified.
+- The psyphin.co.za card (`projects.js` there, image `assets/img/projects/sa-towing-check.jpg`) is amber "In testing"; the owner decides when it goes green.
 
 ## Build status
 
 Done (brief build steps 1–6), launched 2026-09-29: every rule in the brief, legal checks 4.1–4.4, manufacturer panel, heaviest-trailer tile, load list, weighbridge inputs, "What can I tow?" and motor car vs goods vehicle modes, rig diagram, print summary, sources page with open questions, icons/share previews/visit counter, card on psyphin.co.za.
 
-Still open (brief §2.6 / §9, and `openQuestions` in rules.js): verify each rule against the gazetted National Road Traffic Regulations and switch citations to the official text; then flip `verified`/`official`, set `lastChecked`, and consider moving the card from "In testing" to green.
+Legal check (2026-09-29): every legal rule verified against the official text (see "Verifying a rule"). It changed: reg 293 also limits a goods vehicle over 3 500 kg GVM without a trailer; the 80 km/h sign is mandatory (GN R846 of 2014); light trailers heavier than the tare cite 151(1)(a)(iii); tare excludes fuel (Act s1); reg 238 tyre limits apply to motor cars; length limits are reg 221.
+
+Still open: the questions in `openQuestions` (rules.js), and checking for amendments after GN 45901 of 2022.
 
 ## Preview and test
 

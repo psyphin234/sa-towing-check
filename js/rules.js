@@ -21,10 +21,13 @@
  *   params       thresholds used by checks.js
  *   notes        optional extra lines (open questions, interpretation)
  *
- * Status (2026-09-29): every source is secondary (see SPEC §8), so every
- * rule is verified: false and shows the "unverified" badge. To verify a rule,
- * check it against the gazetted National Road Traffic Regulations, update
- * sourceUrl/regulation, set official and verified to true and fill in
+ * Status (2026-09-29): the legal rules and definitions were checked against
+ * government-hosted copies of the gazetted text: the Regulations (GN R225 of
+ * 2000, consolidated to 9 March 2012), the later amendments that touch them
+ * (GN R846 of 2014 and GN R1408 of 2016; the 2016 fee and 2022 form
+ * amendments don't), and the Act as published. Rules that the text doesn't
+ * settle stay verified: false; manufacturer and guidance rules are not law.
+ * When a new amendment is published, re-check the rules it touches and update
  * lastChecked.
  *
  * Classic script (not an ES module) so the site also works opened from disk.
@@ -33,26 +36,36 @@
 (function (root) {
   "use strict";
 
+  // Official sources (government-hosted copies of the gazetted text).
   const SRC = {
+    regs2012: {
+      label: "National Road Traffic Regulations (GN R225 of 17 March 2000, consolidated to 9 March 2012), KZN Department of Transport",
+      url: "http://www.kzntransport.gov.za/reading_room/acts/national/NRTA%20Regs%20Part%201.pdf",
+      official: true,
+    },
+    gnR846: {
+      label: "GN R846 of 31 October 2014 (22nd amendment of the Regulations), Government Gazette 38142",
+      url: "https://www.gov.za/sites/default/files/gcis_document/201411/38142rg10303gon846.pdf",
+      official: true,
+    },
+    gnR1408: {
+      label: "GN R1408 of 11 November 2016 (24th amendment of the Regulations), Government Gazette 40420",
+      url: "https://www.gov.za/sites/default/files/gcis_document/201611/40420gon1408.pdf",
+      official: true,
+    },
+    act1996: {
+      label: "National Road Traffic Act 93 of 1996 as published (Road Traffic Management Corporation)",
+      url: "https://www.rtmc.co.za/images/rtmc/docs/legislation/National%20Road%20Traffic%20Act.pdf",
+      official: true,
+    },
+    // Secondary sources: explanations, kept as further reading.
     focus: {
       label: "Focus on Transport: Towing a trailer? Read this first",
       url: "https://focusontransport.co.za/towing-a-trailer-read-this-first/",
     },
-    forum4x4: {
-      label: "4x4community forum: regulation 99 text as quoted",
-      url: "https://www.4x4community.co.za/forum/showthread.php/163025-Drivers-Licence-Confusion/page5",
-    },
     findSchool: {
       label: "Find a Driving School: Code EB driver's licence",
       url: "https://findadrivingschool.co.za/code-eb-drivers-license",
-    },
-    wikiLicence: {
-      label: "Wikipedia: Driving licence in South Africa",
-      url: "https://en.wikipedia.org/wiki/Driving_licence_in_South_Africa",
-    },
-    ecoimpact: {
-      label: "EcoImpact legal register: National Road Traffic Regulations (copy)",
-      url: "https://registers.ecoimpact.co.za/app/webroot/uploads/doc_legislations/file_56e12ffcb90a2o_1adfq6leo1oe91rde8ll10e1mms7.htm",
     },
     arriveExpert: {
       label: "Arrive Alive: Ask the Expert #1019",
@@ -66,17 +79,13 @@
       label: "Arrive Alive: Towing of vehicles (quotes reg 239)",
       url: "https://www.arrivealive.mobi/towing-of-vehicles",
     },
-    ddyn: {
-      label: "NRTA definitions (ddyn legal updates)",
-      url: "https://ddyn.com/Portal/UpdatesBrowser/PrintPreview?documentId=NRTA&gazdexId=18388",
-    },
-    saflii: {
-      label: "SAFLII: National Road Traffic Act 93 of 1996 (consolidated)",
-      url: "https://www.saflii.org/za/legis/consol_act/nrta1996189.pdf",
-    },
     carmag: {
       label: "CAR magazine: Towing in South Africa, here's what the law says",
       url: "https://www.carmag.co.za/technical/technical/towing-in-south-africa-heres-what-the-law-says/",
+    },
+    redarc: {
+      label: "REDARC: How to calculate your caravan tow ball weight",
+      url: "https://www.redarcelectronics.com/au/discover/how-to-calculate-your-caravan-tow-ball-weight/",
     },
     carsCoZa: {
       label: "Cars.co.za: Guide to safe towing",
@@ -88,7 +97,11 @@
     return { label: SRC[key].label, url: SRC[key].url };
   }
 
-  // Shared defaults for every rule until it is checked against the gazette.
+  // Checked against the official text listed in the rule's sources.
+  const VERIFIED = { official: true, verified: true, lastChecked: "2026-09-29" };
+  // Not law: the explanatory source was read and supports the summary.
+  const SOURCE_CHECKED = { official: false, verified: true, lastChecked: "2026-09-29" };
+  // Not law, or not settled by the regulation's wording.
   const UNVERIFIED = { official: false, verified: false, lastChecked: null };
 
   const rules = [
@@ -98,24 +111,27 @@
       category: "definition",
       title: "Goods vehicle",
       summary:
-        "A motor vehicle (not a motor cycle, tricycle, motor car, minibus or bus) designed or adapted to carry goods on a public road. Most bakkies are registered as light delivery vehicles (goods vehicles), and many double cabs are too, but your registration papers decide.",
-      regulation: "National Road Traffic Act 93 of 1996, s1",
-      sourceUrl: SRC.ddyn.url,
-      sourceLabel: SRC.ddyn.label,
-      moreSources: [src("saflii")],
-      ...UNVERIFIED,
+        "A motor vehicle, other than a motor cycle, motor tricycle, motor quadrucycle, motor car, minibus or bus, designed or adapted to carry goods on a public road.",
+      regulation: "National Road Traffic Regulations, reg 1 (as substituted by GN R846 of 2014)",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      moreSources: [src("gnR846")],
+      ...VERIFIED,
+      notes: [
+        "Not from the regulation: most bakkies are registered as light delivery vehicles (goods vehicles), and many double cabs are too, but your registration papers decide.",
+      ],
     },
     {
       id: "def-motor-car",
       category: "definition",
       title: "Motor car",
       summary:
-        "A motor vehicle designed or adapted solely or principally to carry no more than nine persons, including the driver. SUVs are motor cars.",
-      regulation: "National Road Traffic Act 93 of 1996, s1",
-      sourceUrl: SRC.ddyn.url,
-      sourceLabel: SRC.ddyn.label,
-      moreSources: [src("saflii")],
-      ...UNVERIFIED,
+        "A motor vehicle, other than a motor cycle, motor tricycle or motor quadrucycle, designed or adapted solely or principally to carry not more than nine persons, including the driver.",
+      regulation: "National Road Traffic Regulations, reg 1",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      ...VERIFIED,
+      notes: ["Not from the regulation: sedans and SUVs are normally registered as motor cars."],
     },
     {
       id: "def-vehicle-type-from-papers",
@@ -123,57 +139,62 @@
       title: "Vehicle type comes from the registration papers",
       summary:
         "Whether your vehicle is a motor car or a goods vehicle is what its registration certificate / licence disc says, not its body shape. A double cab can be either: it carries up to five people and has a load bed, so check your papers.",
-      regulation: "National Road Traffic Act 93 of 1996, s1",
-      sourceUrl: SRC.ddyn.url,
-      sourceLabel: SRC.ddyn.label,
+      regulation: "National Road Traffic Regulations, reg 1 (definitions of goods vehicle and motor car)",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
       ...UNVERIFIED,
+      notes: [
+        "The definitions depend on what a vehicle is \"designed or adapted\" for; how a particular double cab is registered is not settled by the regulation text. See Still to check.",
+      ],
     },
     {
       id: "def-overrun-service-brake",
       category: "definition",
       title: "Overrun brake vs service brake",
       summary:
-        "An overrun brake is worked by a device on the drawbar through the trailer's inertia. A service brake must be operable by the driver of the drawing vehicle while moving. A normal caravan overrun brake is NOT a service brake.",
+        "An overrun brake is a braking system worked by a device on the trailer's drawbar through the trailer's inertia. A trailer's service brake must be capable of being operated by the driver of the drawing vehicle while moving. A normal caravan overrun brake is NOT a service brake.",
       regulation: "National Road Traffic Regulations, reg 1 (definitions) and reg 151(2)",
-      sourceUrl: SRC.ecoimpact.url,
-      sourceLabel: SRC.ecoimpact.label,
-      moreSources: [src("ddyn")],
-      ...UNVERIFIED,
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      moreSources: [src("gnR846")],
+      ...VERIFIED,
     },
-
     {
       id: "def-tare",
       category: "definition",
       title: "Tare",
       summary:
-        "The mass of the vehicle unladen. Use the tare printed on the licence disc / registration certificate.",
+        "The mass of the vehicle ready to travel on a road, including the spare wheel, standard accessories and anything permanently fitted, but NOT including fuel. Use the tare on the licence disc / registration certificate.",
       regulation: "National Road Traffic Act 93 of 1996, s1",
-      sourceUrl: SRC.ddyn.url,
-      sourceLabel: SRC.ddyn.label,
-      moreSources: [src("saflii")],
-      ...UNVERIFIED,
+      sourceUrl: SRC.act1996.url,
+      sourceLabel: SRC.act1996.label,
+      ...VERIFIED,
+      notes: [
+        "Because tare excludes fuel, the fuel in the tank always counts against payload.",
+        "Checked against the Act as published; later amendments to the Act were not available to check, but every current copy found gives the same wording.",
+      ],
     },
     {
       id: "def-gvm",
       category: "definition",
       title: "GVM (gross vehicle mass)",
-      summary: "The maximum laden mass of the vehicle, as specified by the manufacturer (on the compliance plate).",
+      summary:
+        "The maximum mass of the vehicle and its load as specified by the manufacturer (or, without that, as determined by the registering authority).",
       regulation: "National Road Traffic Act 93 of 1996, s1",
-      sourceUrl: SRC.ddyn.url,
-      sourceLabel: SRC.ddyn.label,
-      moreSources: [src("saflii")],
-      ...UNVERIFIED,
+      sourceUrl: SRC.act1996.url,
+      sourceLabel: SRC.act1996.label,
+      ...VERIFIED,
     },
     {
       id: "def-gcm",
       category: "definition",
       title: "GCM (gross combination mass)",
-      summary: "The maximum combined mass of the vehicle plus trailer(s), as specified by the manufacturer.",
+      summary:
+        "The maximum mass of the combination (drawing vehicle plus trailers) and load as specified by the manufacturer (or, without that, as determined by the registering authority).",
       regulation: "National Road Traffic Act 93 of 1996, s1",
-      sourceUrl: SRC.ddyn.url,
-      sourceLabel: SRC.ddyn.label,
-      moreSources: [src("saflii")],
-      ...UNVERIFIED,
+      sourceUrl: SRC.act1996.url,
+      sourceLabel: SRC.act1996.label,
+      ...VERIFIED,
     },
 
     // ---------------------------------------------------------------- reg 99 licence codes
@@ -182,12 +203,12 @@
       category: "legal",
       title: "Driving licence code",
       summary:
-        "A motor car is classed by its tare, any other vehicle (bakkie/LDV, goods vehicle, minibus, bus) by its GVM. Up to 3 500 kg: code B, or EB when the trailer GVM is over 750 kg. Over 3 500 kg up to 16 000 kg: code C1, or EC1 with a trailer over 750 kg. Heavier needs C/EC.",
-      regulation: "National Road Traffic Regulations, reg 99(4)",
-      sourceUrl: SRC.focus.url,
-      sourceLabel: SRC.focus.label,
-      moreSources: [src("forum4x4"), src("wikiLicence")],
-      ...UNVERIFIED,
+        "A motor vehicle is classed by its tare; a minibus, midibus, bus or goods vehicle by its GVM. Up to 3 500 kg: code B with a trailer GVM up to 750 kg, EB with a heavier trailer. Over 3 500 kg up to 16 000 kg: C1, or EC1 with a trailer over 750 kg. Heavier: C or EC.",
+      regulation: "National Road Traffic Regulations, reg 99(4)(a) (as substituted by GN R53 of 2011 and GN R846 of 2014)",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      moreSources: [src("gnR846"), src("focus")],
+      ...VERIFIED,
       params: {
         lightVehicleMaxKg: 3500, // B / EB drawing vehicle: tare (motor car) or GVM (other) up to this
         mediumVehicleMaxKg: 16000, // C1 / EC1 drawing vehicle up to this
@@ -198,8 +219,7 @@
           C1: { light: "C1", heavy: "EC1" },
           C: { light: "C", heavy: "EC" },
         },
-        // Higher codes include lower ones. Codes C and EC are out of scope for
-        // this tool; their lists follow the same pattern but are unverified.
+        // "Includes authorisation to drive" column of the reg 99(4) table.
         includes: {
           B: ["B"],
           EB: ["B", "EB"],
@@ -211,7 +231,7 @@
         outOfScopeCodes: ["C", "EC"],
       },
       notes: [
-        "With two trailers this tool uses the sum of the trailer GVMs for the 750 kg test. Confirm with your DLTC.",
+        "With two trailers this tool uses the sum of the trailer GVMs for the 750 kg test; the regulation speaks of \"a trailer\". Confirm with your DLTC.",
       ],
     },
     {
@@ -219,12 +239,12 @@
       category: "legal",
       title: "The EB \"3 500 kg GCM\" myth",
       summary:
-        "The \"GCM up to 3 500 kg\" wording for code EB applies to articulated vehicles (truck-tractor plus semi-trailer). A car or bakkie towing a caravan on a towball is not articulated. For those, the 3 500 kg limit applies to the tow vehicle, not to vehicle plus trailer.",
-      regulation: "National Road Traffic Regulations, reg 99(4)",
-      sourceUrl: SRC.findSchool.url,
-      sourceLabel: SRC.findSchool.label,
-      moreSources: [src("focus")],
-      ...UNVERIFIED,
+        "Code EB's \"gross combination mass of the truck-tractor does not exceed 3 500 kg\" applies only to articulated vehicles (truck-tractor plus semi-trailer). For a car or bakkie with a trailer, EB covers a tow vehicle with a tare (motor car) or GVM (goods vehicle) up to 3 500 kg and a trailer GVM over 750 kg, with no combined-mass limit in the licence code.",
+      regulation: "National Road Traffic Regulations, reg 99(4)(a), code EB",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      moreSources: [src("gnR846"), src("findSchool")],
+      ...VERIFIED,
       notes: [
         "Example: a goods vehicle with a GVM over 3 500 kg (Super Duty class) needs C1 to drive and EC1 to tow more than 750 kg, even when its tare is under 3 500 kg.",
       ],
@@ -236,12 +256,12 @@
       category: "legal",
       title: "Trailer brakes vs tow vehicle tare",
       summary:
-        "The brakes a trailer needs depend only on its plated GVM and the tow vehicle's tare. Engine power and the factory towing capacity play no part. Trailer GVM up to 750 kg and up to half the tare: parking brake only. Over half the tare (or over 750 kg), up to the tare: overrun or service brake. Over the tare, or over 3 500 kg: service brake the driver can operate.",
-      regulation: "National Road Traffic Regulations, reg 151(1)(a)–(c)",
-      sourceUrl: SRC.ecoimpact.url,
-      sourceLabel: SRC.ecoimpact.label,
+        "The brakes a trailer needs depend only on its GVM and the tow vehicle's tare; engine power and the factory towing capacity play no part. Up to 750 kg and up to half the tare: parking brake (or other device to keep it stationary). Over half the tare, up to the tare (and up to 3 500 kg): parking brake plus overrun or service brake. Over the tare, or over 3 500 kg: parking brake plus a service brake the driver can operate.",
+      regulation: "National Road Traffic Regulations, reg 151(1)–(3)",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
       moreSources: [src("arriveExpert"), src("focus")],
-      ...UNVERIFIED,
+      ...VERIFIED,
       params: {
         lightTrailerMaxKg: 750, // 151(1)(a) vs (b)
         unbrakedTareFraction: 0.5, // 151(1)(a)(i): up to half the tare
@@ -251,14 +271,15 @@
         clauses: {
           parkingOnly: "151(1)(a)(i)",
           lightOverTareHalf: "151(1)(a)(ii)",
+          lightOverTare: "151(1)(a)(iii)",
           heavyUpToTare: "151(1)(b)(i)",
           overTare: "151(1)(b)(ii)",
           overHeavy: "151(1)(c)",
         },
       },
       notes: [
-        "Every trailer also needs a parking brake or a device to keep it stationary.",
-        "With more than one trailer, the sum of all trailer GVMs is used (reg 151(1), closing words).",
+        "Every trailer also needs a parking brake (or, for a light trailer, a device to keep it stationary). An overrun or service brake that can also be used as a parking brake counts as one (reg 151(3)).",
+        "With more than one trailer, the requirements apply to each trailer, using the total GVM of all the trailers (reg 151(1), closing words).",
       ],
     },
     {
@@ -266,12 +287,12 @@
       category: "legal",
       title: "Plated GVM, not actual mass",
       summary:
-        "Reg 151 compares the trailer's plated GVM (from its licence disc / compliance plate) with the tow vehicle's tare, not what the trailer actually weighs on the day. A lightly loaded caravan with a high plated GVM still counts at its plated GVM.",
-      regulation: "National Road Traffic Regulations, reg 151(1)",
-      sourceUrl: SRC.ecoimpact.url,
-      sourceLabel: SRC.ecoimpact.label,
-      ...UNVERIFIED,
-      notes: ["This is a reading of the regulation's wording that has not yet been confirmed."],
+        "Reg 151 uses the trailer's gross vehicle mass, which the Act defines as the maximum mass specified by the manufacturer (the plated GVM on its licence disc / compliance plate), not what the trailer weighs on the day. A lightly loaded caravan with a high plated GVM still counts at its plated GVM.",
+      regulation: "National Road Traffic Regulations, reg 151(1), read with the Act's definition of gross vehicle mass (s1)",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      moreSources: [src("act1996")],
+      ...VERIFIED,
     },
 
     // ---------------------------------------------------------------- reg 292 / 293 speed
@@ -279,42 +300,53 @@
       id: "reg292-general-speed",
       category: "legal",
       title: "General speed limits",
-      summary: "60 km/h in urban areas, 100 km/h on rural roads other than freeways, 120 km/h on freeways, unless a sign shows otherwise.",
+      summary: "60 km/h in urban areas, 100 km/h on public roads outside urban areas other than freeways, 120 km/h on freeways, unless a sign shows otherwise.",
       regulation: "National Road Traffic Regulations, reg 292",
-      sourceUrl: SRC.arriveSpeed.url,
-      sourceLabel: SRC.arriveSpeed.label,
-      ...UNVERIFIED,
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      moreSources: [src("arriveSpeed")],
+      ...VERIFIED,
       params: { urbanKmh: 60, ruralKmh: 100, freewayKmh: 120 },
     },
     {
       id: "reg293-goods-towing-speed",
       category: "legal",
-      title: "Speed limit for goods vehicles towing",
+      title: "Speed limit for goods vehicles",
       summary:
-        "A goods vehicle drawing one or two trailers is limited to 100 km/h when the sum of the GVMs (vehicle plus trailers) is over 3 500 kg up to 9 000 kg, and to 80 km/h when that sum is over 9 000 kg. This applies to goods vehicles only: a motor car (SUV) towing the same caravan keeps the general limits.",
-      regulation: "National Road Traffic Regulations, reg 293(1)(b)(iv)(bb) and 293(1)(a)(ii)",
-      sourceUrl: SRC.arriveSpeed.url,
-      sourceLabel: SRC.arriveSpeed.label,
-      ...UNVERIFIED,
+        "100 km/h for a goods vehicle with a GVM over 3 500 kg up to 9 000 kg, and for a goods vehicle drawing one or two trailers where the vehicle's GVM plus the trailers' GVMs is over 3 500 kg up to 9 000 kg. 80 km/h where the vehicle's GVM, or that sum, is over 9 000 kg. Goods vehicles only: a motor car (SUV) towing the same caravan keeps the general limits.",
+      regulation: "National Road Traffic Regulations, reg 293(1)(a)(i)–(ii) and 293(1)(b)(iv) (inserted by GN R1408 of 2016)",
+      sourceUrl: SRC.gnR1408.url,
+      sourceLabel: SRC.gnR1408.label,
+      moreSources: [src("regs2012"), src("arriveSpeed")],
+      ...VERIFIED,
       params: {
-        combinedGvmOverKg: 3500, // sum of GVMs above this: 100 km/h
-        combinedGvmHeavyOverKg: 9000, // sum of GVMs above this: 80 km/h
+        combinedGvmOverKg: 3500, // GVM (or sum of GVMs) above this: 100 km/h
+        combinedGvmHeavyOverKg: 9000, // GVM (or sum of GVMs) above this: 80 km/h
         limitKmh: 100,
         heavyLimitKmh: 80,
         maxTrailers: 2, // the regulation covers one or two trailers
-        clauses: { limit: "293(1)(b)(iv)(bb)", heavy: "293(1)(a)(ii)" },
+        clauses: {
+          limit: "293(1)(b)(iv)(bb)",
+          heavy: "293(1)(a)(ii)",
+          soloLimit: "293(1)(b)(iv)(aa)",
+          soloHeavy: "293(1)(a)(i)",
+        },
       },
     },
     {
       id: "reg293-speed-sign",
       category: "legal",
-      title: "100 km/h sign on the rear",
+      title: "Speed-limit sign on the rear",
       summary:
-        "A combination limited to 100 km/h under reg 293 must display a 100 km/h speed-limit sign on the rear, in the colours set by SANS 1329.",
-      regulation: "National Road Traffic Regulations, reg 293(2)(b)",
-      sourceUrl: SRC.arriveSpeed.url,
-      sourceLabel: SRC.arriveSpeed.label,
-      ...UNVERIFIED,
+        "A vehicle limited to 100 km/h under reg 293(1)(b) must display a 100 km/h sign on the rear, and a goods vehicle limited to 80 km/h under reg 293(1)(a) an 80 km/h sign, in the colours set by SANS 1329.",
+      regulation: "National Road Traffic Regulations, reg 293(2)(a)–(b) (paragraph (a) as substituted by GN R846 of 2014)",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      moreSources: [src("gnR846"), src("gnR1408")],
+      ...VERIFIED,
+      notes: [
+        "The regulation says \"on the rear of\" the vehicle and doesn't say where the sign goes when a trailer is hitched. A sign on the tow vehicle is hidden by a caravan, so put one where following traffic can see it and confirm with your DLTC.",
+      ],
     },
 
     // ---------------------------------------------------------------- reg 239 overloading
@@ -323,57 +355,57 @@
       category: "legal",
       title: "Overloading (goods vehicles)",
       summary:
-        "It is an offence to operate a minibus, bus, tractor or goods vehicle that exceeds its GVM, any gross axle massload or its GCM.",
+        "No person may operate a minibus, bus, tractor or goods vehicle on a public road if its GVM, any gross axle massload or any gross axle unit massload is exceeded, or, when it draws another vehicle, if the GCM is exceeded.",
       regulation: "National Road Traffic Regulations, reg 239(1)",
-      sourceUrl: SRC.arriveTowing.url,
-      sourceLabel: SRC.arriveTowing.label,
-      ...UNVERIFIED,
-      notes: [
-        "The \"GVM, axle massload or GCM\" list follows the brief's reading of the regulation heading; the exact subregulation wording is still to be checked.",
-      ],
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      moreSources: [src("gnR846"), src("arriveTowing")],
+      ...VERIFIED,
     },
     {
       id: "reg239-motor-car-exclusion",
       category: "legal",
-      title: "Motor cars and reg 239(1)",
+      title: "Motor cars and the overloading offences",
       summary:
-        "Motor cars are not listed in reg 239(1). For an SUV, overloading is shown as a manufacturer rating and insurance issue rather than this specific offence.",
-      regulation: "National Road Traffic Regulations, reg 239(1)",
-      sourceUrl: SRC.arriveTowing.url,
-      sourceLabel: SRC.arriveTowing.label,
-      ...UNVERIFIED,
-      notes: ["This is an interpretation that has not yet been confirmed."],
+        "Reg 239(1), and the permissible-mass rules in regs 236 and 237, list minibuses, buses, tractors and goods vehicles, not motor cars. For an SUV, going over the GVM, axle ratings or GCM is shown as a manufacturer and insurance issue rather than these offences.",
+      regulation: "National Road Traffic Regulations, regs 236, 237 and 239(1)",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      ...VERIFIED,
+      notes: [
+        "Tyre load limits (reg 238) apply to every motor vehicle, motor cars included: no wheel may carry more than its tyre is rated for.",
+      ],
     },
     {
       id: "reg239-driving-axle",
       category: "legal",
       title: "Driving axle ratio (goods vehicles)",
       summary:
-        "The mass of a goods vehicle or combination must not exceed 5 times the total axle massload of its driving axle(s). This matters for 2WD bakkies towing heavy with a light load in the back.",
-      regulation: "National Road Traffic Regulations, reg 239(3)",
-      sourceUrl: SRC.arriveTowing.url,
-      sourceLabel: SRC.arriveTowing.label,
-      ...UNVERIFIED,
+        "No person may operate a minibus, midibus, bus, tractor or goods vehicle if the mass of the vehicle, or of the combination it forms part of, exceeds five times the total axle massload of its driving axle or axles. This matters for 2WD bakkies towing heavy with a light load in the back.",
+      regulation: "National Road Traffic Regulations, reg 239(3) (as substituted by GN R846 of 2014)",
+      sourceUrl: SRC.gnR846.url,
+      sourceLabel: SRC.gnR846.label,
+      moreSources: [src("regs2012"), src("arriveTowing")],
+      ...VERIFIED,
       params: { maxMassToDrivingAxleRatio: 5 },
       notes: [
         "A part-time 4x4 driven in 2WD may only have its rear axle driving; whether that changes the driving axle(s) for this rule is unconfirmed.",
       ],
     },
 
-    // ---------------------------------------------------------------- length (regulation not yet found)
+    // ---------------------------------------------------------------- length
     {
       id: "length-limits",
       category: "legal",
       title: "Combination and trailer length",
       summary:
-        "Reported limits: combination length under 22 m; a trailer (not a semi-trailer) with a GVM under 12 000 kg at most 8 m long. The regulation number has not been confirmed.",
-      regulation: "Regulation number not yet confirmed",
-      sourceUrl: SRC.carsCoZa.url,
-      sourceLabel: SRC.carsCoZa.label,
-      moreSources: [{ label: "getyourlearners.co.za (trailer length; page not recorded)", url: null }],
-      ...UNVERIFIED,
-      params: { maxCombinationLengthM: 22, maxTrailerLengthM: 8, trailerLengthGvmBelowKg: 12000 },
-      notes: ["Not used in any check until the regulation is found."],
+        "A combination of vehicles may be at most 22 m long including the drawbar. A trailer (not a semi-trailer) with one axle or one axle unit and a GVM up to 12 000 kg may be at most 8 m long, excluding the drawbar.",
+      regulation: "National Road Traffic Regulations, reg 221(b)(ii) and (g)",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      ...VERIFIED,
+      params: { maxCombinationLengthM: 22, maxTrailerLengthM: 8, trailerLengthGvmMaxKg: 12000 },
+      notes: ["Shown for reference; the checker doesn't ask for lengths."],
     },
 
     // ---------------------------------------------------------------- manufacturer ratings (not law)
@@ -384,12 +416,12 @@
       category: "manufacturer",
       title: "Payload",
       summary:
-        "Payload is GVM minus tare. Everything you carry counts against it: people, fuel not included in the tare, accessories (canopy, roof rack, rooftop tent, drawers, fridge), water, gear and the tow ball mass of the trailer.",
+        "Payload is GVM minus tare. Everything you carry counts against it: people, fuel (tare never includes it), accessories (canopy, roof rack, rooftop tent, drawers, fridge), water, gear and the tow ball mass of the trailer.",
       regulation: "Vehicle manufacturer's GVM (compliance plate / owner's manual)",
       sourceUrl: SRC.carsCoZa.url,
       sourceLabel: SRC.carsCoZa.label,
-      moreSources: [src("carmag")],
-      ...UNVERIFIED,
+      moreSources: [src("redarc"), src("act1996")],
+      ...SOURCE_CHECKED,
     },
     {
       id: "maker-gcm",
@@ -400,8 +432,8 @@
       regulation: "Vehicle manufacturer's GCM (owner's manual)",
       sourceUrl: SRC.carsCoZa.url,
       sourceLabel: SRC.carsCoZa.label,
-      moreSources: [src("carmag")],
-      ...UNVERIFIED,
+      moreSources: [src("act1996")],
+      ...SOURCE_CHECKED,
     },
     {
       id: "maker-towing-capacity",
@@ -410,10 +442,10 @@
       summary:
         "The manufacturer rates the heaviest trailer the vehicle may tow: one figure for a braked trailer and a lower one for an unbraked trailer. This is a rating, not the legal limit; reg 151 can set a lower legal limit.",
       regulation: "Vehicle manufacturer's towing capacity (owner's manual)",
-      sourceUrl: SRC.carmag.url,
-      sourceLabel: SRC.carmag.label,
+      sourceUrl: SRC.carsCoZa.url,
+      sourceLabel: SRC.carsCoZa.label,
       moreSources: [src("arriveExpert")],
-      ...UNVERIFIED,
+      ...SOURCE_CHECKED,
     },
     {
       id: "maker-towball-max",
@@ -422,9 +454,9 @@
       summary:
         "The manufacturer's maximum vertical load on the tow ball (and on the towbar's own plate, if that is lower). The tow ball mass also counts against payload.",
       regulation: "Vehicle / towbar manufacturer's rating (owner's manual, towbar plate)",
-      sourceUrl: SRC.carmag.url,
-      sourceLabel: SRC.carmag.label,
-      ...UNVERIFIED,
+      sourceUrl: SRC.redarc.url,
+      sourceLabel: SRC.redarc.label,
+      ...SOURCE_CHECKED,
     },
     {
       id: "maker-axle-ratings",
@@ -433,9 +465,9 @@
       summary:
         "Each axle has a maximum load (gross axle massload) set by the manufacturer. Tow ball mass acts behind the rear axle like a lever: it adds more than its own mass to the rear axle and takes some load off the front.",
       regulation: "Vehicle manufacturer's axle ratings (compliance plate / owner's manual)",
-      sourceUrl: SRC.carsCoZa.url,
-      sourceLabel: SRC.carsCoZa.label,
-      ...UNVERIFIED,
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      ...SOURCE_CHECKED,
       notes: [
         "Estimate used: extra rear axle load = tow ball mass × (wheelbase + rear overhang) ÷ wheelbase; front axle load drops by tow ball mass × rear overhang ÷ wheelbase. Rear overhang is measured from the rear axle centre to the tow ball.",
       ],
@@ -446,9 +478,9 @@
       title: "Trailer within its own GVM",
       summary: "The loaded trailer must not weigh more than its own plated GVM. Its load capacity is its GVM minus its tare.",
       regulation: "Trailer manufacturer's GVM (trailer licence disc / compliance plate)",
-      sourceUrl: SRC.carsCoZa.url,
-      sourceLabel: SRC.carsCoZa.label,
-      ...UNVERIFIED,
+      sourceUrl: SRC.act1996.url,
+      sourceLabel: SRC.act1996.label,
+      ...SOURCE_CHECKED,
     },
 
     // ---------------------------------------------------------------- not law
@@ -457,15 +489,20 @@
       category: "guidance",
       title: "Tow ball (nose) mass",
       summary:
-        "Rule of thumb: tow ball mass of 7–10 % of the trailer's actual mass, and never more than the vehicle manufacturer's maximum. This is a rule of thumb, not a legal limit.",
-      regulation: "Guidance only (no legal limit found yet)",
-      sourceUrl: SRC.carmag.url,
-      sourceLabel: SRC.carmag.label,
-      ...UNVERIFIED,
+        "Rule of thumb: a tow ball mass of 7–10 % of the loaded trailer's actual mass, and never more than the vehicle or towbar maker's maximum. Follow your caravan maker's figure if it gives one. This is a rule of thumb, not a legal limit.",
+      regulation: "Guidance only: the regulations set no tow ball mass limit",
+      sourceUrl: "https://www.redarcelectronics.com/au/discover/how-to-calculate-your-caravan-tow-ball-weight/",
+      sourceLabel: "REDARC: How to calculate your caravan tow ball weight",
+      moreSources: [
+        { label: "Outback Travel Australia: Towball weight and trailer stability", url: "https://outbacktravelaustralia.com.au/driving-towing-towing/towball-weight-and-trailer-stability/" },
+      ],
+      official: false,
+      verified: true,
+      lastChecked: "2026-09-29",
       params: { minFraction: 0.07, maxFraction: 0.1 },
       notes: [
-        "The linked source has not yet been checked for the 7–10 % figure.",
-        "Whether any legal nose-weight limit exists is still an open question.",
+        "Advice varies: European research found about 6–8 % best, while many Australian and American makers use about 10 % or more. Too little tow ball mass can make the trailer sway.",
+        "No tow ball mass limit was found in the National Road Traffic Regulations.",
       ],
     },
     {
@@ -477,7 +514,10 @@
       regulation: "Insurance terms (not a regulation)",
       sourceUrl: SRC.focus.url,
       sourceLabel: SRC.focus.label,
-      ...UNVERIFIED,
+      official: false,
+      verified: true,
+      lastChecked: "2026-09-29",
+      notes: ["Whether a claim is refused depends on your policy wording: check it with your insurer."],
     },
   ];
 
@@ -514,22 +554,14 @@
     },
   };
 
-  // What still needs checking, shown on sources.html. Remove an entry once it
-  // is settled (and update the rules it names).
+  // What the regulation text doesn't settle, shown on sources.html. Remove an
+  // entry once it is settled (and update the rules it names).
   const openQuestions = [
-    {
-      text: "Check every rule against the official gazetted National Road Traffic Regulations (as amended) and cite the Government Notice number.",
-      ruleIds: [],
-    },
     { text: "How are double cab bakkies registered: always as goods vehicles (LDVs), or can one be a motor car?", ruleIds: ["def-goods-vehicle", "def-vehicle-type-from-papers"] },
-    { text: "Does reg 151 use the trailer's plated GVM rather than what it actually weighs?", ruleIds: ["reg151-plated-gvm"] },
-    { text: "Does reg 239(1) leave out motor cars (so overloading an SUV is not that offence)?", ruleIds: ["reg239-motor-car-exclusion"] },
-    { text: "Exact wording of reg 239(1): does it cover GVM, each gross axle massload and GCM?", ruleIds: ["reg239-overloading"] },
     { text: "For a part-time 4x4 driven in 2WD, which axles count as driving axles under reg 239(3)?", ruleIds: ["reg239-driving-axle"] },
-    { text: "With two trailers, does the 750 kg licence threshold apply to the sum of the trailer GVMs?", ruleIds: ["reg99-licence-codes"] },
-    { text: "Which sign must a combination limited to 80 km/h display?", ruleIds: ["reg293-goods-towing-speed"] },
-    { text: "Which regulation sets the 22 m combination length and 8 m trailer length?", ruleIds: ["length-limits"] },
-    { text: "Is there a legal limit on tow ball (nose) mass, or only the manufacturer's rating?", ruleIds: ["guidance-towball-mass"] },
+    { text: "With two trailers, does the 750 kg licence threshold apply to the sum of the trailer GVMs? Reg 99 speaks of \"a trailer\".", ruleIds: ["reg99-licence-codes"] },
+    { text: "When towing, where must the 100 km/h (or 80 km/h) sign go: on the tow vehicle, or on the rear of the trailer where it can be seen?", ruleIds: ["reg293-speed-sign"] },
+    { text: "Have any amendments since the 25th amendment (GN 45901 of February 2022) changed these rules?", ruleIds: [] },
   ];
 
   // Display settings (not law): when a mass counts as "close to the limit" (amber).
@@ -540,8 +572,8 @@
   // perUnit: what "Qty" counts ("each" or "litre").
   const loadPresets = [
     { id: "person", label: "Person (driver or passenger)", kg: 80, qty: 1, perUnit: "each" },
-    { id: "diesel", label: "Diesel not included in tare", kg: 0.84, qty: 80, perUnit: "litre" },
-    { id: "petrol", label: "Petrol not included in tare", kg: 0.74, qty: 80, perUnit: "litre" },
+    { id: "diesel", label: "Diesel (tare excludes fuel)", kg: 0.84, qty: 80, perUnit: "litre" },
+    { id: "petrol", label: "Petrol (tare excludes fuel)", kg: 0.74, qty: 80, perUnit: "litre" },
     { id: "water", label: "Water", kg: 1, qty: 40, perUnit: "litre" },
     { id: "canopy", label: "Canopy", kg: 70, qty: 1, perUnit: "each" },
     { id: "roof-rack", label: "Roof rack", kg: 25, qty: 1, perUnit: "each" },

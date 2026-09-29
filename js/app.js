@@ -326,13 +326,17 @@
       lines = ["Enter the GVM to see the speed limit when towing."];
       ids = ["reg293-goods-towing-speed"];
     } else {
+      const sign = (kmh) => `${kmh} km/h maximum and a ${kmh} km/h sign on the rear`;
       lines = [];
-      if (s.limitOverKg > 0) lines.push(`Trailer GVM up to ${C.kg(s.limitOverKg)}: ${generalText}.`);
-      lines.push(
-        (s.limitOverKg > 0 ? `Trailer GVM over ${C.kg(s.limitOverKg)}: ` : "Any trailer: ") +
-          `${s.limitKmh} km/h maximum and a ${s.limitKmh} km/h sign on the rear.`
-      );
-      lines.push(`Trailer GVM over ${C.kg(s.heavyOverKg)}: ${s.heavyLimitKmh} km/h maximum.`);
+      if (s.heavyOverKg === 0) {
+        lines.push(`Your GVM is over 9 000 kg: ${sign(s.heavyLimitKmh)}, with or without a trailer.`);
+      } else {
+        if (s.limitOverKg > 0) lines.push(`Trailer GVM up to ${C.kg(s.limitOverKg)}: ${generalText}.`);
+        else lines.push(`Your GVM is over 3 500 kg, so even without a trailer: ${sign(s.limitKmh)}.`);
+        lines.push((s.limitOverKg > 0 ? `Trailer GVM over ${C.kg(s.limitOverKg)}: ` : "With a trailer: ") + `${sign(s.limitKmh)}.`);
+        lines.push(`Trailer GVM over ${C.kg(s.heavyOverKg)}: ${sign(s.heavyLimitKmh)}.`);
+      }
+      lines.push(R.get("reg293-speed-sign").notes[0]);
       ids = ["reg293-goods-towing-speed", "reg293-speed-sign"];
     }
     return el(
