@@ -44,6 +44,8 @@
     if (m.towballMissing) notes.push("Tow ball mass not entered: it counts against payload.");
     if (input.vehicleType === "goodsVehicle")
       notes.push("For a goods vehicle, going over the GVM is also an offence (reg 239(1)): see Legal requirements.");
+    else if (!input.vehicleType)
+      notes.push("If it's registered as a goods vehicle, going over the GVM is also an offence (reg 239(1)): see Legal requirements.");
 
     if (m.vehicle.source === "weighbridge") {
       const status = level(m.vehicle.kg, input.gvmKg);
@@ -292,9 +294,17 @@
   // ------------------------------------------------------------------ heaviest trailer (SPEC §5)
   // The lowest of: reg 151 limit for the fitted brakes, licence code limit,
   // factory towing capacity and the room left under the GCM.
+  // With no vehicle type, the stricter of the two (a type whose classing mass
+  // is missing is skipped).
   function licenceTrailerCap(input) {
     const p = R.get("reg99-licence-codes").params;
-    if (!input.licenceCode || !input.vehicleType) return null;
+    if (!input.licenceCode) return null;
+    if (!input.vehicleType) {
+      const caps = ["goodsVehicle", "motorCar"]
+        .map((type) => licenceTrailerCap(Object.assign({}, input, { vehicleType: type })))
+        .filter((cap) => cap !== null);
+      return caps.length ? Math.min.apply(null, caps) : null;
+    }
     const basisKg = input.vehicleType === "motorCar" ? input.tareKg : input.gvmKg;
     if (!isNum(basisKg)) return null;
     const vehicleClass = basisKg <= p.lightVehicleMaxKg ? "B" : basisKg <= p.mediumVehicleMaxKg ? "C1" : "C";
@@ -302,6 +312,12 @@
     if (held.indexOf(p.requiredCode[vehicleClass].heavy) !== -1) return null; // no licence cap
     if (held.indexOf(p.requiredCode[vehicleClass].light) !== -1) return p.lightTrailerMaxKg;
     return 0; // licence doesn't cover this vehicle at all
+  }
+
+  function licenceCapDependsOnType(input) {
+    if (input.vehicleType) return false;
+    const cap = (type) => licenceTrailerCap(Object.assign({}, input, { vehicleType: type }));
+    return cap("goodsVehicle") !== cap("motorCar");
   }
 
   function trailerLimit(input) {
@@ -334,6 +350,8 @@
         category: "legal",
         ruleId: "reg99-licence-codes",
       });
+      if (licenceCapDependsOnType(input))
+        notes.push("The licence limit depends on how the vehicle is registered; this uses the stricter case. Choose the vehicle type to be sure.");
     }
     const rating = brake === "none" ? input.unbrakedCapacityKg : input.brakedCapacityKg;
     if (isNum(rating)) {
@@ -440,6 +458,7 @@
     axleCheck,
     towballLever,
     licenceTrailerCap,
+    licenceCapDependsOnType,
   };
   if (isNode) module.exports = api;
   else root.TOWING_RATINGS = api;

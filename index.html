@@ -55,12 +55,26 @@
           <legend>Tow vehicle</legend>
 
           <div class="field" data-modes="check tow">
-            <span class="label" id="vehicle-type-label">Vehicle type (as registered)</span>
+            <span class="label" id="vehicle-type-label">Vehicle type (as registered) <small>(optional)</small></span>
             <div class="choice" role="radiogroup" aria-labelledby="vehicle-type-label">
               <label><input type="radio" name="vehicleType" value="goodsVehicle"><span>Goods vehicle <small>e.g. single cab bakkie, LDV</small></span></label>
               <label><input type="radio" name="vehicleType" value="motorCar"><span>Motor car <small>e.g. sedan, SUV</small></span></label>
+              <label class="choice-wide"><input type="radio" name="vehicleType" value="" checked><span>Not sure <small>show both where the rules differ</small></span></label>
             </div>
-            <p class="hint">Double cab? It can be either: check your registration papers.</p>
+            <p class="hint">This isn't about body style or comfort. SA law has extra towing rules for goods vehicles, so the answer changes your legal results. Double cab? It can be either: check your registration papers, or choose Not sure.</p>
+            <details class="help">
+              <summary>Why does this matter?</summary>
+              <div class="help-body">
+                <p>Your weights and manufacturer limits are the same either way. What changes is which laws apply. A goods vehicle:</p>
+                <ul>
+                  <li>is limited to 100 km/h, and has to show a speed sign, once its GVM plus the trailer's GVM is over 3&nbsp;500&nbsp;kg (most bakkie and caravan rigs)</li>
+                  <li>commits an offence if it goes over its GVM, an axle rating or its GCM (for a motor car this is a safety and insurance issue, not an offence)</li>
+                  <li>must keep the whole rig under 5 times the load on its driving axle(s)</li>
+                  <li>needs a licence code based on its GVM rather than its tare</li>
+                </ul>
+                <p>Not sure which applies? Try <strong>Car vs bakkie</strong> above to compare both.</p>
+              </div>
+            </details>
             <details class="help" data-rule-help="def-vehicle-type-from-papers">
               <summary>Which one is my vehicle?</summary>
               <div class="help-body"></div>

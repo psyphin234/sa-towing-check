@@ -563,7 +563,7 @@
     eq(row(t, "overrun").legalMaxKg, 3500);
     includes(row(t, "overrun").legal[0].label, "151(1)(c)");
   });
-  test("tow: needs vehicle type, tare and (goods) GVM", () => {
+  test("tow: needs tare, and GVM for a goods vehicle or unknown type", () => {
     eq(MD.whatCanITow({ tareKg: 2000 }).ready, false);
     eq(MD.whatCanITow(bakkie({})).ready, false);
     eq(MD.whatCanITow(bakkie({ tareKg: 2000 })).ready, false);
@@ -599,6 +599,64 @@
   });
   test("compare: needs tare and GVM", () => {
     eq(cmp({ gvmKg: null }).ready, false);
+  });
+
+  // ------------------------------------------------------------ vehicle type left blank
+  const unsure = (o) => Object.assign({ vehicleType: "", licenceCode: "", trailers: [], trailerBrake: "" }, o);
+  const caravanRig = (o) => unsure(Object.assign({ tareKg: 2100, gvmKg: 3100, licenceCode: "EB", trailers: trailer(2500), trailerBrake: "overrun" }, o));
+  const legalCard = (input, id) => C.runLegalChecks(input).checks.find((c) => c.id === id);
+
+  test("unsure: speed shows both types, amber overall", () => {
+    const r = C.runLegalChecks(caravanRig());
+    eq(r.dependsOnType, true);
+    const speed = r.checks.find((c) => c.id === "speed");
+    eq(speed.variants.length, 2);
+    eq(speed.variants[0].type, "goodsVehicle");
+    eq(speed.variants[0].status, "warn");
+    includes(speed.variants[0].reason, "100 km/h");
+    eq(speed.variants[1].status, "info");
+    includes(speed.variants[1].reason, "General limits");
+    eq(speed.status, "warn", "worst of the two");
+    if (speed.ruleIds.indexOf("def-vehicle-type-from-papers") === -1) throw new Error("cites the papers rule");
+  });
+  test("unsure: checks that agree give one outcome", () => {
+    const lic = legalCard(caravanRig(), "licence");
+    eq(lic.variantsSame, true, "licence: EB either way, only the wording differs");
+    eq(lic.status, "pass");
+    includes(lic.reason, "Same whichever way");
+    includes(lic.reason, "code EB, which your code covers");
+    eq(legalCard(caravanRig(), "brakes").variants, undefined, "brakes never depend on type");
+    const solo = legalCard(unsure({ tareKg: 2100, gvmKg: 3100 }), "speed");
+    eq(solo.variantsSame, true, "no trailer, GVM under 3 500 kg: general limits either way");
+    includes(solo.reason, "general limits apply");
+  });
+  test("unsure: licence differs when GVM is over 3 500 kg and tare under", () => {
+    const lic = legalCard(caravanRig({ tareKg: 2800, gvmKg: 3600 }), "licence");
+    eq(lic.variants[0].status, "fail", "goods vehicle needs EC1");
+    eq(lic.variants[1].status, "pass", "motor car needs EB");
+    eq(lic.status, "fail");
+  });
+  test("unsure: driving axle card says it doesn't apply to a motor car", () => {
+    const d = legalCard(caravanRig(), "driving-axle");
+    includes(d.variants[1].reason, "Does not apply");
+  });
+  test("unsure: every cited rule exists", () => {
+    C.runLegalChecks(caravanRig({ tareKg: 2800, gvmKg: 3600 })).checks.forEach((c) => c.ruleIds.forEach((id) => R.get(id)));
+  });
+  test("unsure: licence trailer cap takes the stricter type", () => {
+    const i = caravanRig({ tareKg: 2800, gvmKg: 3600 });
+    eq(M.licenceTrailerCap(i), 0, "EB doesn't cover a GVM over 3 500 kg");
+    eq(M.licenceCapDependsOnType(i), true);
+    eq(M.licenceTrailerCap(caravanRig()), null, "EB covers both");
+  });
+  test("unsure: What can I tow? uses the heavier licence class and both speed cases", () => {
+    const t = MD.whatCanITow(unsure({ tareKg: 2800, gvmKg: 3600 }));
+    eq(t.ready, true);
+    eq(t.licence.cls, "C1");
+    includes(t.notes.join(" "), "stricter case");
+    eq(t.speed.applies, true);
+    eq(t.speed.eitherType, true);
+    eq(MD.whatCanITow(unsure({ tareKg: 2100, gvmKg: 3100 })).licence.cls, "B");
   });
 
   // ------------------------------------------------------------ report

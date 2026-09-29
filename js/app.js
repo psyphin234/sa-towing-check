@@ -177,6 +177,23 @@
     );
   }
 
+  // One vehicle type's outcome, when the type was left blank.
+  function renderVariant(v, labels) {
+    return el(
+      "li",
+      { class: "variant variant--" + v.status },
+      el(
+        "div",
+        { class: "variant-head" },
+        el("span", { class: "status-icon", "aria-hidden": "true" }, STATUS_ICON[v.status]),
+        el("strong", null, "If registered as a " + v.label.toLowerCase()),
+        el("span", { class: "status-label" }, labels[v.status])
+      ),
+      el("p", null, v.reason),
+      v.notes.length ? el("ul", { class: "check-notes" }, v.notes.map((n) => el("li", null, n))) : null
+    );
+  }
+
   function renderCheck(check, labels) {
     const rules = check.ruleIds.map((id) => R.get(id));
     return el(
@@ -190,6 +207,15 @@
         el("span", { class: "status-label" }, labels[check.status])
       ),
       el("p", { class: "check-reason" }, check.reason),
+      check.variants && !check.variantsSame ? el("ul", { class: "variants" }, check.variants.map((v) => renderVariant(v, labels))) : null,
+      check.variantsSame
+        ? el(
+            "details",
+            { class: "help variants-details" },
+            el("summary", null, "Details for each vehicle type"),
+            el("ul", { class: "variants" }, check.variants.map((v) => renderVariant(v, labels)))
+          )
+        : null,
       check.meter ? renderMeter(check.meter, check.status) : null,
       check.notes.length ? el("ul", { class: "check-notes" }, check.notes.map((n) => el("li", null, n))) : null,
       el("ul", { class: "cites", "aria-label": "Sources" }, rules.map(citation))
@@ -339,12 +365,24 @@
       lines.push(R.get("reg293-speed-sign").notes[0]);
       ids = ["reg293-goods-towing-speed", "reg293-speed-sign"];
     }
+    let list = [
+      el("ul", null, lines.map((l) => el("li", null, l))),
+      s.applies && !s.incomplete ? el("p", { class: "hint" }, "Based on your vehicle's GVM plus the trailer's plated GVM.") : null,
+    ];
+    if (s.eitherType) {
+      ids.push("reg292-general-speed", "def-vehicle-type-from-papers");
+      list = [
+        el("p", { class: "tow-speed-group" }, "If registered as a goods vehicle:"),
+        list,
+        el("p", { class: "tow-speed-group" }, "If registered as a motor car:"),
+        el("ul", null, el("li", null, `${generalText.charAt(0).toUpperCase() + generalText.slice(1)} whatever you tow.`)),
+      ];
+    }
     return el(
       "div",
       { class: "tow-speed" },
       el("h3", null, "Speed limit when towing"),
-      el("ul", null, lines.map((l) => el("li", null, l))),
-      s.applies && !s.incomplete ? el("p", { class: "hint" }, "Based on your vehicle's GVM plus the trailer's plated GVM.") : null,
+      list,
       citeList(ids)
     );
   }
@@ -445,7 +483,7 @@
     const add = (label, value) => {
       if (value !== null && value !== undefined && value !== "") rows.push(el("tr", null, el("th", { scope: "row" }, label), el("td", null, value)));
     };
-    if (mode !== "compare") add("Vehicle type (as registered)", VEHICLE_NAME[input.vehicleType]);
+    if (mode !== "compare") add("Vehicle type (as registered)", VEHICLE_NAME[input.vehicleType] || "Not sure (both shown)");
     add("Tare", kgOrNull(input.tareKg));
     add("GVM", kgOrNull(input.gvmKg));
     add("GCM", kgOrNull(input.gcmKg));
@@ -524,7 +562,14 @@
     overallBox.className = "overall overall--" + legal.overall;
     overallBox.replaceChildren(
       el("span", { class: "status-icon", "aria-hidden": "true" }, STATUS_ICON[legal.overall]),
-      el("span", null, OVERALL_TEXT[legal.overall])
+      el(
+        "span",
+        null,
+        OVERALL_TEXT[legal.overall],
+        legal.dependsOnType && legal.overall !== "incomplete"
+          ? " Some results depend on how your vehicle is registered: choose the vehicle type to narrow them down."
+          : ""
+      )
     );
     legalList.replaceChildren(...legal.checks.map((c) => renderCheck(c, LEGAL_STATUS_LABEL)));
 

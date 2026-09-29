@@ -60,6 +60,7 @@ One form, three modes (buttons above the form; the URL hash holds the mode: none
 
 - Elements carry `data-modes="check tow compare"` (any subset); `setMode()` in app.js hides the rest. Inputs keep their values across modes.
 - `[hidden] { display: none !important }` in style.css is what makes hiding work on elements with their own `display` rule. Keep it.
+- **Vehicle type is optional** ("Not sure", value `""`, is the default). With no type, `runLegalChecks` runs each type-dependent check both ways (`forEitherType`): identical results show as one card; same outcome in different words gets a neutral "Same whichever way it's registered" line with per-type details folded away (`variantsSame`); different outcomes show a variant per type, and the card takes the worse status. Licence caps and classes (heaviest-trailer tile, What can I tow?) use the stricter type, with a note.
 - **Check my rig**: every legal and manufacturer check. **What can I tow?**: no trailer inputs; one card per brake type with the legal cap (plated GVM) and manufacturer cap (actual mass), plus speed thresholds for goods vehicles. **Car vs bakkie**: no vehicle-type input; runs the legal checks twice (motor car / goods vehicle) and tabulates the differences using each check's `data` field.
 
 ## Diagram, print and sources

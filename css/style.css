@@ -404,6 +404,16 @@ select:focus {
   margin-top: 2px;
 }
 
+.choice .choice-wide {
+  grid-column: 1 / -1;
+}
+
+.field > .label small {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .choice label:has(input:checked) {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
@@ -436,6 +446,15 @@ select:focus {
 
 .help-body p {
   margin: 0 0 6px;
+}
+
+.help-body ul:not(.cites) {
+  margin: 0 0 6px;
+  padding-left: 1.2em;
+}
+
+.help-body li {
+  margin-bottom: 3px;
 }
 
 .fieldset-hint {
@@ -728,6 +747,52 @@ select:focus {
   margin-top: 2px;
 }
 
+/* one outcome per vehicle type, when the type was left blank */
+.variants {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.variant {
+  --tone: var(--incomplete);
+  padding: 8px 10px;
+  border-left: 3px solid var(--tone);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.variant--pass { --tone: var(--pass); }
+.variant--warn { --tone: var(--warn); }
+.variant--fail { --tone: var(--fail); }
+.variant--info { --tone: var(--info); }
+
+.variant-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.variant-head .status-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 0.75rem;
+}
+
+.variant-head .status-label {
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--tone);
+}
+
+.variant p {
+  margin: 4px 0 0;
+}
+
 /* meter: fill carries the status; the track is a dim step of the same colour */
 .meter {
   --tone: var(--incomplete);
@@ -974,6 +1039,11 @@ select:focus {
 .tow-speed ul {
   margin: 8px 0 0;
   padding-left: 18px;
+}
+
+.tow-speed-group {
+  margin: 10px 0 0;
+  font-weight: 600;
 }
 
 /* ------------------------------------------------------------ motor car vs goods vehicle */

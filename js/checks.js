@@ -4,6 +4,9 @@
  *
  * Every threshold comes from rules.js params. Each check returns:
  *   { id, title, status, reason, notes: [], ruleIds: [] }
+ * With no vehicle type, runLegalChecks adds variants: [{ type, label, status,
+ * reason, notes }] to checks whose wording or outcome depends on the type
+ * (variantsSame: true when only the wording does).
  * status is one of:
  *   "pass"        legal as entered (green)
  *   "warn"        legal, but with a restriction or something you must do (amber)
@@ -471,15 +474,58 @@
     return checks.reduce((worst, c) => (STATUS_RANK[c.status] > STATUS_RANK[worst] ? c.status : worst), "pass");
   }
 
+  // Vehicle type left blank: run a type-dependent check both ways. Identical
+  // results show as one card. Otherwise the card gets a variant per type:
+  // variantsSame when only the wording differs (same status and data), so
+  // the card can give the shared outcome and tuck the variants away.
+  const TYPE_LABEL = { goodsVehicle: "Goods vehicle", motorCar: "Motor car" };
+  const SAME_OUTCOME_TEXT = {
+    licence: (d, status) =>
+      `you need code ${d.required}` +
+      (status === "pass" ? ", which your code covers" : status === "fail" ? ", which your code doesn't cover" : ""),
+    speed: (d) => (d.limitKmh ? `maximum ${d.limitKmh} km/h, with a ${d.limitKmh} km/h sign on the rear` : "the general limits apply"),
+  };
+
+  function forEitherType(check, input) {
+    const run = (type) => check(Object.assign({}, input, { vehicleType: type }));
+    const goods = run("goodsVehicle");
+    const car =
+      run("motorCar") ||
+      result(goods.id, goods.title, "info", "Does not apply to a motor car.", ["reg239-motor-car-exclusion"]);
+    if (goods.status === car.status && goods.reason === car.reason) return goods;
+    const same =
+      goods.status === car.status &&
+      goods.data &&
+      car.data &&
+      SAME_OUTCOME_TEXT[goods.id] &&
+      JSON.stringify(goods.data) === JSON.stringify(car.data);
+    const variant = (type, c) => ({ type, label: TYPE_LABEL[type], status: c.status, reason: c.reason, notes: c.notes });
+    const merged = result(
+      goods.id,
+      goods.title,
+      worstStatus([goods, car]),
+      same
+        ? `Same whichever way it's registered: ${SAME_OUTCOME_TEXT[goods.id](goods.data, goods.status)}.`
+        : "Depends on how your vehicle is registered:",
+      Array.from(new Set(goods.ruleIds.concat(car.ruleIds, "def-vehicle-type-from-papers"))),
+      null,
+      same ? goods.data : null
+    );
+    merged.variants = [variant("goodsVehicle", goods), variant("motorCar", car)];
+    merged.variantsSame = Boolean(same);
+    return merged;
+  }
+
   function runLegalChecks(input) {
+    const typed = (check) => (input.vehicleType ? check(input) : forEitherType(check, input));
     const checks = [
-      licenceCheck(input),
+      typed(licenceCheck),
       brakeCheck(input),
-      speedCheck(input),
-      overloadingCheck(input),
-      drivingAxleCheck(input),
+      typed(speedCheck),
+      typed(overloadingCheck),
+      typed(drivingAxleCheck),
     ].filter(Boolean);
-    return { checks, overall: worstStatus(checks) };
+    return { checks, overall: worstStatus(checks), dependsOnType: checks.some((c) => c.variants && !c.variantsSame) };
   }
 
   const api = {

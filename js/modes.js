@@ -28,12 +28,21 @@
     return limits;
   }
 
-  // Licence class of the vehicle and the codes it needs (reg 99).
+  // Licence class of the vehicle and the codes it needs (reg 99). With no
+  // vehicle type, the heavier class of the two (both masses needed).
   function licenceClass(input) {
     const p = R.get("reg99-licence-codes").params;
-    const basisKg = input.vehicleType === "motorCar" ? input.tareKg : input.gvmKg;
-    if (!isNum(basisKg)) return null;
-    const cls = basisKg <= p.lightVehicleMaxKg ? "B" : basisKg <= p.mediumVehicleMaxKg ? "C1" : "C";
+    const classOf = (kgValue) => (kgValue <= p.lightVehicleMaxKg ? "B" : kgValue <= p.mediumVehicleMaxKg ? "C1" : "C");
+    let cls;
+    if (input.vehicleType) {
+      const basisKg = input.vehicleType === "motorCar" ? input.tareKg : input.gvmKg;
+      if (!isNum(basisKg)) return null;
+      cls = classOf(basisKg);
+    } else {
+      if (!isNum(input.tareKg) || !isNum(input.gvmKg)) return null;
+      const order = ["B", "C1", "C"];
+      cls = order[Math.max(order.indexOf(classOf(input.tareKg)), order.indexOf(classOf(input.gvmKg)))];
+    }
     return {
       cls,
       lightCode: p.requiredCode[cls].light,
@@ -43,14 +52,17 @@
   }
 
   // Trailer GVM thresholds for the reg 293 towing speed limit (goods vehicles).
+  // eitherType: no vehicle type, so these apply only if it's a goods vehicle.
   function speedThresholds(input) {
     const p = R.get("reg293-goods-towing-speed").params;
     const general = R.get("reg292-general-speed").params;
-    if (input.vehicleType !== "goodsVehicle") return { applies: false, general };
-    if (!isNum(input.gvmKg)) return { applies: true, general, incomplete: true };
+    const eitherType = !input.vehicleType;
+    if (input.vehicleType === "motorCar") return { applies: false, general };
+    if (!isNum(input.gvmKg)) return { applies: true, general, eitherType, incomplete: true };
     return {
       applies: true,
       general,
+      eitherType,
       // trailer GVM (sum) above which each limit applies
       limitOverKg: Math.max(p.combinedGvmOverKg - input.gvmKg, 0),
       heavyOverKg: Math.max(p.combinedGvmHeavyOverKg - input.gvmKg, 0),
@@ -62,7 +74,6 @@
 
   // ------------------------------------------------------------------ What can I tow?
   function whatCanITow(input) {
-    if (!input.vehicleType) return { ready: false, reason: "Choose the vehicle type from your registration papers." };
     if (!isNum(input.tareKg)) return { ready: false, reason: "Enter the tare from your licence disc." };
     const lic = licenceClass(input);
     if (!lic) return { ready: false, reason: "Enter the GVM: a goods vehicle's licence code depends on it." };
@@ -131,6 +142,8 @@
     });
 
     const notes = [];
+    if (!input.vehicleType && licenceClass(Object.assign({}, input, { vehicleType: "motorCar" })).cls !== lic.cls)
+      notes.push("The licence code needed depends on how the vehicle is registered (a motor car is classed by its tare, a goods vehicle by its GVM); this uses the stricter case. Choose the vehicle type to be sure.");
     if (!input.licenceCode)
       notes.push(
         `Trailers up to ${kg(lic.lightTrailerMaxKg)} GVM need code ${lic.lightCode}; heavier trailers need code ${lic.heavyCode}. Choose your licence code to apply it.`
