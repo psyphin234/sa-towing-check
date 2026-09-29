@@ -1,6 +1,6 @@
 # SA Towing Check
 
-Static checker for South African towing legality (licence code, trailer brakes vs tare, speed limit), part of the PsyPhin site. Intended repo `psyphin234/sa-towing-check` on GitHub Pages, which will serve it at `https://psyphin.co.za/sa-towing-check/` (see psyphin.co.za's CLAUDE.md, "Other GitHub Pages repos").
+Static checker for South African towing legality (licence code, trailer brakes vs tare, speed limit, overloading, manufacturer ratings), part of the PsyPhin site. Repo `psyphin234/sa-towing-check` (public), GitHub Pages from `main` / root, live at **https://psyphin.co.za/sa-towing-check/** by inheritance from the psyphin.co.za user site (see its CLAUDE.md, "Other GitHub Pages repos"). Push to `main` to deploy; check with `gh api repos/psyphin234/sa-towing-check/pages/builds/latest`.
 
 Plain HTML/CSS/vanilla JS. **No build step, no framework.** All calculations run in the browser; user inputs are never stored or sent anywhere.
 
@@ -61,11 +61,17 @@ One form, three modes (buttons above the form; the URL hash holds the mode: none
 - **Print summary** (`data-print` buttons, `window.print()`): print CSS hides the form and controls, switches to light colours, and shows `#print-sheet` (built in app.js): what was entered, and in check mode a write-in table for weighbridge readings with the limits pre-filled. Check changes with Edge: `msedge --headless=new --print-to-pdf=out.pdf "file:///…/index.html#example"`.
 - **Sources page**: status summary per group, "Still to check" (`openQuestions` in rules.js; remove an entry once settled), then every rule with an anchor. Citation badges in the checker link to `sources.html#<rule-id>`.
 
+## Site furniture
+
+- Favicons are a copy of psyphin.co.za's set; change both together. `og-image.jpg` (1200x630) is a crop of the rig diagram, used by both pages' Open Graph tags.
+- GoatCounter (cookie-free page visits, shared dashboard https://psyphin.goatcounter.com/) is on index.html and sources.html, just before `</body>`. It never sees form inputs (they are never sent anywhere); the privacy line on the checker says visits are counted. Don't add it to tests/.
+- The psyphin.co.za card (`projects.js` there, image `assets/img/projects/sa-towing-check.jpg`) is amber "In testing" while the rules are unverified.
+
 ## Build status
 
-Done (brief build steps 1–5): `rules.js` with every rule in the brief, legal checks 4.1–4.4, manufacturer panel, heaviest-trailer tile, load list builder, weighbridge inputs, "What can I tow?" and motor car vs goods vehicle modes, rig diagram, print summary, sources page with open questions, worked-example loader.
+Done (brief build steps 1–6), launched 2026-09-29: every rule in the brief, legal checks 4.1–4.4, manufacturer panel, heaviest-trailer tile, load list, weighbridge inputs, "What can I tow?" and motor car vs goods vehicle modes, rig diagram, print summary, sources page with open questions, icons/share previews/visit counter, card on psyphin.co.za.
 
-Next (brief step 6): mobile polish, GoatCounter tag (page views only, like the rest of psyphin.co.za), GitHub Pages deploy and a `projects.js` card on psyphin.co.za. Before launch (brief §2.6): replace secondary citations with the gazetted text where possible.
+Still open (brief §2.6 / §9, and `openQuestions` in rules.js): verify each rule against the gazetted National Road Traffic Regulations and switch citations to the official text; then flip `verified`/`official`, set `lastChecked`, and consider moving the card from "In testing" to green.
 
 ## Preview and test
 
