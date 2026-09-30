@@ -573,6 +573,23 @@ select:focus {
   font-weight: 400;
   font-size: 0.8rem;
   color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* if the heading wraps, "(optional)" goes with the last word, never alone */
+.summary-tail {
+  white-space: nowrap;
+}
+
+/* phones: keep "(optional)" on the heading's line */
+@media (max-width: 420px) {
+  .fieldset-details > summary {
+    font-size: 1.05rem;
+  }
+
+  .fieldset-details > summary small {
+    font-size: 0.75rem;
+  }
 }
 
 .inputs fieldset:has(> .fieldset-details) {
@@ -1640,6 +1657,13 @@ select:focus {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 12px;
+}
+
+/* one column: the form's Print summary button sits just above, so don't repeat it */
+@media (max-width: 899px) {
+  .results-actions {
+    display: none;
+  }
 }
 
 .print-only {
