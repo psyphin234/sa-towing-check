@@ -642,7 +642,7 @@
                 ["Front axle", kgOrNull(input.frontAxleRatingKg) ? `rating ${kgOrNull(input.frontAxleRatingKg)}` : "axle rating"],
                 ["Rear axle", kgOrNull(input.rearAxleRatingKg) ? `rating ${kgOrNull(input.rearAxleRatingKg)}` : "axle rating"],
                 ["Trailer axle(s)", ""],
-                ["Tow ball", kgOrNull(input.maxTowballKg) ? `maximum ${kgOrNull(input.maxTowballKg)}` : ""],
+                ["Tow ball", M.towballMax(input) ? `maximum ${C.kg(M.towballMax(input).kg)}` : ""],
                 ["Vehicle total (front + rear)", kgOrNull(input.gvmKg) ? `GVM ${kgOrNull(input.gvmKg)}` : "GVM"],
                 ["Everything (all axles)", kgOrNull(input.gcmKg) ? `GCM ${kgOrNull(input.gcmKg)}` : "GCM"],
               ].map(([label, limit]) => el("tr", null, el("th", { scope: "row" }, label), blank(), el("td", null, limit)))

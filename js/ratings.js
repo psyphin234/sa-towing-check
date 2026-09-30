@@ -154,6 +154,19 @@
   }
 
   // ------------------------------------------------------------------ tow ball
+  // The highest tow ball mass this checker accepts: 100 kg for a caravan or
+  // light trailer (VC 8026, a grey area but treated as the maximum), or the
+  // vehicle/towbar maker's maximum if that is lower. null = no limit known.
+  // A trailer GVM not yet entered counts as light, the usual case.
+  function towballMax(input) {
+    const p = R.get("vc8026-towball-limit").params;
+    const trailers = input.trailers || [];
+    const light = !trailers.some((t) => isNum(t.gvmKg) && t.gvmKg > p.maxTrailerGvmKg);
+    const makerKg = isNum(input.maxTowballKg) ? input.maxTowballKg : null;
+    if (light && (makerKg === null || makerKg > p.maxKg)) return { kg: p.maxKg, source: "legal", makerKg };
+    return makerKg === null ? null : { kg: makerKg, source: "maker", makerKg };
+  }
+
   function towballCheck(input) {
     const m = rigMasses(input);
     if (m.trailerCount === 0) return null;
@@ -167,20 +180,36 @@
     const notes = [];
     let status = "pass";
 
-    if (isNum(input.maxTowballKg)) {
-      parts.push(`${kg(m.towballKg)} against the maximum of ${kg(input.maxTowballKg)}.`);
-      if (m.towballKg > input.maxTowballKg) status = "fail";
+    const max = towballMax(input);
+    if (max) {
+      parts.push(`${kg(m.towballKg)} against the maximum of ${kg(max.kg)}.`);
+      if (m.towballKg > max.kg) status = "fail";
+      if (max.source === "legal") {
+        ids.push("vc8026-towball-limit");
+        notes.push(
+          max.makerKg !== null
+            ? `Your vehicle or towbar is rated ${kg(max.makerKg)}, but with a caravan or light trailer this checker uses ${kg(max.kg)} as the maximum (see Tow ball mass: 25–100 kg).`
+            : `${kg(max.kg)} is the maximum for a caravan or light trailer (see Tow ball mass: 25–100 kg). Check your vehicle's and towbar's own ratings too: they can be lower.`
+        );
+      }
     } else {
       parts.push(`Tow ball mass ${kg(m.towballKg)}.`);
-      notes.push("Maximum tow ball mass not entered (owner's manual / towbar plate).");
     }
+    if (!isNum(input.maxTowballKg)) notes.push("Maximum tow ball mass not entered (owner's manual / towbar plate).");
 
     if (m.trailer) {
       const ratio = m.towballKg / m.trailer.kg;
-      const inRange = ratio >= g.minFraction && ratio <= g.maxFraction;
+      const pct = (f) => Math.round(f * 100);
+      const low = g.minFraction * m.trailer.kg;
+      // For a heavy trailer the rule of thumb is above the maximum: aim close to it instead.
+      const capped = max !== null && low > max.kg;
+      const inRange = capped || (ratio >= g.minFraction && ratio <= g.maxFraction);
       parts.push(
-        `That is ${(ratio * 100).toFixed(1)} % of the trailer's ${kg(m.trailer.kg)}; the rule of thumb is ${Math.round(g.minFraction * 100)}–${Math.round(g.maxFraction * 100)} % (a rule of thumb, not a legal limit).`
+        capped
+          ? `That is ${(ratio * 100).toFixed(1)} % of the trailer's ${kg(m.trailer.kg)}. The ${pct(g.minFraction)}–${pct(g.maxFraction)} % rule of thumb (${kg(low)} or more) is above the ${kg(max.kg)} maximum, so aim close to ${kg(max.kg)}.`
+          : `That is ${(ratio * 100).toFixed(1)} % of the trailer's ${kg(m.trailer.kg)}; the rule of thumb is ${pct(g.minFraction)}–${pct(g.maxFraction)} % (a rule of thumb, not a legal limit).`
       );
+      if (capped) notes.push(R.get("guidance-towball-mass").notes[1]);
       if (!inRange) {
         if (status === "pass") status = "warn";
         notes.push(
@@ -425,7 +454,7 @@
       hasData: Boolean(m.vehicle),
       front,
       rear,
-      towball: m.trailerCount ? point(m.towballKg, input.maxTowballKg, "entered", "maximum") : null,
+      towball: m.trailerCount ? point(m.towballKg, (towballMax(input) || {}).kg, "entered", "maximum") : null,
       trailerAxles,
       vehicle: m.vehicle ? point(m.vehicle.kg, input.gvmKg, m.vehicle.source, "GVM") : null,
       trailer,
@@ -458,6 +487,7 @@
     axleCheck,
     towballLever,
     licenceTrailerCap,
+    towballMax,
     licenceCapDependsOnType,
   };
   if (isNode) module.exports = api;

@@ -232,7 +232,7 @@
   // brakes. Vehicle type isn't asked (it's used if chosen in the advanced
   // check), so type-dependent results usually show both.
   // raw: { tareKg, gvmKg, licenceCode, trailerTareKg, trailerGvmKg, trailerBrake, vehicleType? }
-  const SIMPLE_CHECKS = ["licence", "brakes", "speed"];
+  const SIMPLE_CHECKS = ["licence", "brakes", "speed", "towball-legal"];
 
   function simpleInput(raw) {
     return {

@@ -31,7 +31,7 @@ tests/run.ps1       Runs the tests in headless Edge: powershell -ExecutionPolicy
 - **Every threshold lives in `rules.js`** (in a rule's `params`), next to its citation. `checks.js`, `app.js` and HTML must not hard-code legal numbers.
 - Every legal result cites its rule(s) via `ruleIds`. The checker keeps this compact to avoid crowding: one "Read more:" line per card (`ruleLinks()` in ui.js) of plain rule titles with a short regulation number (`shortRef()`, e.g. "reg 99", "Act s1"), each linking to the rule's entry on sources.html in a new tab (so form inputs survive). The full regulation text, gazette/source links and Verified badges are on the sources page only; an unverified legal rule still shows its badge in the checker (spec §3). A test checks every legal rule and definition yields a short reference.
 - Cards lead with the result and figures; a check's `notes` sit in a "More detail" toggle (`notesToggle()` in app.js). Results are rebuilt on every input, so `toggle()` remembers which toggles are open (keyed by check id, so legal and manufacturer check ids must stay distinct). A closed toggle can't print, so each also renders a `print-only` copy of its notes.
-- `verified: false` rules show "Unverified: confirm with DLTC". Since 2026-09-29 every legal rule and definition is verified against official text except `def-vehicle-type-from-papers` (how double cabs are registered isn't in the regulations). Manufacturer and guidance rules show "Source checked" once their explanatory source has been read (`SOURCE_CHECKED`).
+- `verified: false` rules show "Unverified: confirm with DLTC". Since 2026-09-29 every legal rule and definition is verified against official text except `def-vehicle-type-from-papers` (how double cabs are registered isn't in the regulations) and `vc8026-towball-limit` (the 25–100 kg tow ball limit: in a compulsory specification, and whether it binds the person towing is a grey area). Manufacturer and guidance rules show "Source checked" once their explanatory source has been read (`SOURCE_CHECKED`).
 - Keep claims that aren't in the regulation (e.g. "most bakkies are registered as LDVs") out of a verified rule's `summary`; put them in `notes`, starting "Not from the regulation:".
 - Legal checks (blue "SA law" tag) are kept separate from manufacturer limits (purple "Vehicle maker" / "Manufacturer" tag). Wording: say "SA law" and "manufacturer limit"; avoid "not legal" for manufacturer limits, because NOT LEGAL is the red status for breaking a rule.
 - The disclaimer stays on every results view.
@@ -43,6 +43,8 @@ Official texts used (2026-09-29), all fetched and read in full for the rules con
 - Amendments since then: GN R846 of 2014 (changed regs 1, 99, 239, 293(2)(a)) and GN R1408 of 2016 (added reg 293(1)(b)(iv)), both on gov.za. The 2013 and 2016-fee amendments and GN 45901 of 2022 (forms only) don't touch these rules; amendment list from rte.mobilitas.co.za.
 - The Act as published (RTMC PDF) for GVM, GCM and tare.
 
+- **Compulsory specifications count too.** Reg 216(1) makes vehicles and trailers comply with the NRCS compulsory specifications (VC numbers, listed in Annex A to SABS 047), so a limit can be law without appearing in the regulations. Search them, not just the regulations: VC 8026 (caravans and light trailers, category O1/O2) is where the 25–100 kg tow ball limit is (cl. 3.5.2); VC 8065 makes SANS 1505 compulsory for ball couplings and towing brackets. Found 2026-09-30, after the site had wrongly said there was no tow ball limit.
+
 To re-verify after a new amendment:
 1. Read the amendment in the Government Gazette (gov.za / gpwonline) and note which regulations it changes.
 2. In `rules.js`: update `summary`, `params`, `regulation` (add the GN number) and sources; set `lastChecked: "YYYY-MM-DD"`. Rules the text doesn't settle stay `verified: false` and get an `openQuestions` entry.
@@ -53,6 +55,7 @@ To re-verify after a new amendment:
 - Best source first: weighbridge readings (taken **with the trailer hitched**) > entered trailer actual mass > trailer plated GVM; the vehicle falls back to tare + load list + tow ball mass.
 - The tow ball mass is carried by the vehicle (counts against payload/GVM and the rear axle) but is part of the trailer's mass, so the combination counts it **once**: combined = (vehicle − tow ball) + trailer.
 - Legal limits (reg 151, licence) apply to the trailer's **plated GVM**; manufacturer limits to its **actual mass**. The heaviest-trailer tile says so.
+- Tow ball: `towballMax()` in ratings.js is the maximum used everywhere (tow ball card, diagram, print sheet): 100 kg for a trailer up to 3 500 kg even when the towbar is rated higher (bakkie towbars are often 300–350 kg), or the maker's figure if lower. The 7–10 % rule of thumb is capped at that maximum.
 - "Close to the limit" (amber) is `settings.nearLimitFraction` in rules.js. Load list presets (`loadPresets`) are rough starting masses, labelled as guesses in the UI.
 
 ## Modes

@@ -419,6 +419,52 @@
     );
   }
 
+  // ------------------------------------------------------------------ tow ball mass (VC 8026 via reg 216)
+  // A grey area (see the rule's notes), but the checker treats 100 kg as the
+  // maximum for a caravan or light trailer.
+  function towballLegalCheck(input) {
+    const t = trailerSum(input);
+    if (t.count === 0) return null;
+    const p = R.get("vc8026-towball-limit").params;
+    const ids = ["vc8026-towball-limit"];
+    const title = "Tow ball mass (25–100 kg)";
+    const range = `${kg(p.minKg)} to ${kg(p.maxKg)}`;
+    if ((input.trailers || []).some((tr) => isNum(tr.gvmKg) && tr.gvmKg > p.maxTrailerGvmKg))
+      return result(
+        "towball-legal",
+        title,
+        "info",
+        `The ${range} limit is for caravans and light trailers with a GVM up to ${kg(p.maxTrailerGvmKg)}. Your trailer is heavier: follow its maker's tow ball figures.`,
+        ids
+      );
+    if (!isNum(input.towballKg))
+      return result(
+        "towball-legal",
+        title,
+        "info",
+        `With the trailer loaded, keep the tow ball (nose) mass between ${range}, whatever your towbar is rated for. Check it with a tow ball scale.`,
+        ids
+      );
+    const tb = input.towballKg;
+    if (tb > p.maxKg)
+      return result(
+        "towball-legal",
+        title,
+        "fail",
+        `${kg(tb)} on the tow ball is over the ${kg(p.maxKg)} maximum for a caravan or light trailer. Move load back towards the trailer's axle.`,
+        ids
+      );
+    if (tb < p.minKg)
+      return result(
+        "towball-legal",
+        title,
+        "fail",
+        `${kg(tb)} on the tow ball is under the ${kg(p.minKg)} minimum for a caravan or light trailer. Move load forward, over the trailer's axle.`,
+        ids
+      );
+    return result("towball-legal", title, "pass", `${kg(tb)} on the tow ball: within ${range}.`, ids);
+  }
+
   const DRIVE_TEXT = { rwd: "rear axle", fwd: "front axle", "4wd": "front and rear axles" };
 
   function drivingAxleCheck(input) {
@@ -522,6 +568,7 @@
       typed(licenceCheck),
       brakeCheck(input),
       typed(speedCheck),
+      towballLegalCheck(input),
       typed(overloadingCheck),
       typed(drivingAxleCheck),
     ].filter(Boolean);
@@ -533,6 +580,7 @@
     licenceCheck,
     brakeCheck,
     speedCheck,
+    towballLegalCheck,
     overloadingCheck,
     drivingAxleCheck,
     requiredBrake,

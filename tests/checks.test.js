@@ -211,7 +211,8 @@
   });
   test("legal rules and definitions are verified against official text", () => {
     R.rules
-      .filter((r) => (r.category === "legal" || r.category === "definition") && r.id !== "def-vehicle-type-from-papers")
+      // the two points the official text doesn't settle stay unverified on purpose
+      .filter((r) => (r.category === "legal" || r.category === "definition") && ["def-vehicle-type-from-papers", "vc8026-towball-limit"].indexOf(r.id) === -1)
       .forEach((r) => {
         if (!r.verified || !r.official) throw new Error(r.id + " not verified against official text");
       });
@@ -408,13 +409,38 @@
     eq(M.towingCapacityCheck(exampleRig({ brakedCapacityKg: null })).status, "incomplete");
     eq(M.towingCapacityCheck(exampleRig({ trailers: [] })), null);
   });
-  test("tow ball: 8 % is fine, over the maximum fails, 4 % is amber guidance", () => {
-    eq(M.towballCheck(exampleRig()).status, "pass");
+  test("tow ball: 100 kg maximum for a light trailer, even with a 350 kg towbar", () => {
+    const over = M.towballCheck(exampleRig()); // 200 kg on the ball
+    eq(over.status, "fail");
+    includes(over.reason, "maximum of 100");
+    includes(over.notes.join(" "), "rated 350");
     eq(M.towballCheck(exampleRig({ towballKg: 380 })).status, "fail");
-    const light = M.towballCheck(exampleRig({ towballKg: 100 }));
-    eq(light.status, "warn");
-    includes(light.reason, "4.0 %");
+    const atCap = M.towballCheck(exampleRig({ towballKg: 100 })); // 4 % of a 2 500 kg caravan
+    eq(atCap.status, "pass", "rule of thumb capped at 100 kg");
+    includes(atCap.reason, "aim close to 100");
     eq(M.towballCheck(exampleRig({ towballKg: null })).status, "incomplete");
+  });
+  test("tow ball: rule of thumb still applies to a small trailer", () => {
+    const small = (tb) => M.towballCheck(exampleRig({ towballKg: tb, trailers: trailer(800) }));
+    eq(small(60).status, "pass", "7.5 %");
+    eq(small(30).status, "warn", "3.75 %: sway risk");
+  });
+  test("tow ball: maker's maximum is used when lower, or for a heavy trailer", () => {
+    eq(M.towballMax(exampleRig({ maxTowballKg: 80 })).kg, 80);
+    eq(M.towballMax(exampleRig({ maxTowballKg: 80 })).source, "maker");
+    eq(M.towballMax(exampleRig({ maxTowballKg: null })).kg, 100, "no rating entered: 100 kg");
+    eq(M.towballMax(exampleRig({ trailers: trailer(4000) })).kg, 350, "over 3 500 kg: VC 8026 doesn't apply");
+    eq(M.towballMax(exampleRig({ trailers: trailer(4000), maxTowballKg: null })), null);
+  });
+  test("tow ball legal check: 25–100 kg, reminder when not entered", () => {
+    const c = (o) => C.towballLegalCheck(exampleRig(o));
+    eq(c({}).status, "fail", "200 kg");
+    eq(c({ towballKg: 100 }).status, "pass");
+    eq(c({ towballKg: 20 }).status, "fail", "under 25 kg");
+    eq(c({ towballKg: null }).status, "info");
+    includes(c({ towballKg: null }).reason, "whatever your towbar is rated for");
+    eq(c({ trailers: trailer(4000) }).status, "info", "heavy trailer: not covered");
+    eq(c({ trailers: [] }), null);
   });
   test("trailer GVM: weighed trailer over its plate fails; load capacity note", () => {
     const c = M.trailerGvmCheck(exampleRig({ trailerActualKg: 2600, trailerTareKg: 1800 }));
@@ -476,7 +502,8 @@
     eq(d.front.kg, null, "axles unknown without weighbridge");
     eq(d.front.status, "none");
     eq(d.towball.kg, 200);
-    eq(d.towball.status, "pass");
+    eq(d.towball.limit, 100, "capped for a light trailer, not the towbar's 350 kg");
+    eq(d.towball.status, "fail");
     eq(d.trailerAxles.kg, 2300, "trailer axle = trailer - tow ball");
     eq(d.trailerAxles.source, "estimate");
     eq(d.trailer.limit, null, "plated trailer not compared with itself");
@@ -669,7 +696,8 @@
     eq(discs({}).ready, true);
   });
   test("simple: licence, brakes and speed only; no load checks", () => {
-    eq(discs({}).checks.map((c) => c.id).join(","), "licence,brakes,speed");
+    eq(discs({}).checks.map((c) => c.id).join(","), "licence,brakes,speed,towball-legal");
+    eq(discs({}).checks[3].status, "info", "no tow ball input: a 25–100 kg reminder");
   });
   test("simple: figures from the discs", () => {
     const f = discs({}).figures;
