@@ -659,6 +659,46 @@
     eq(MD.whatCanITow(unsure({ tareKg: 2100, gvmKg: 3100 })).licence.cls, "B");
   });
 
+  // ------------------------------------------------------------ simple check (discs only)
+  const discs = (o) =>
+    MD.simpleCheck(Object.assign({ tareKg: 2100, gvmKg: 3100, licenceCode: "EB", trailerTareKg: 1500, trailerGvmKg: 2000, trailerBrake: "overrun" }, o));
+  const reasonIds = (s) => s.reasons.map((r) => r.id).join(",");
+
+  test("simple: needs the vehicle disc's tare and GVM", () => {
+    eq(MD.simpleCheck({ tareKg: 2100 }).ready, false);
+    eq(discs({}).ready, true);
+  });
+  test("simple: licence, brakes and speed only; no load checks", () => {
+    eq(discs({}).checks.map((c) => c.id).join(","), "licence,brakes,speed");
+  });
+  test("simple: figures from the discs", () => {
+    const f = discs({}).figures;
+    eq(f.vehiclePayloadKg, 1000);
+    eq(f.trailerPayloadKg, 500);
+    eq(f.heaviestTrailerKg, 2100, "overrun brakes: up to the tare");
+  });
+  test("simple: no trailer disc means no trailer", () => {
+    const s = discs({ trailerGvmKg: null, trailerTareKg: null });
+    eq(s.towing, false);
+    eq(s.figures.trailerPayloadKg, null);
+    eq(s.figures.heaviestTrailerKg, null);
+    eq(reasonIds(s), "", "nothing differs by type without a trailer (GVM under 3 500 kg); no towing note");
+  });
+  test("simple: service brake shows no legal cap", () => {
+    const f = discs({ trailerBrake: "service" }).figures;
+    eq(f.heaviestTrailerKg, null);
+    eq(f.brakeChosen, true);
+  });
+  test("simple: points to the advanced check when it matters", () => {
+    eq(reasonIds(discs({})), "vehicle-type,manufacturer", "speed differs by type with a caravan");
+    includes(discs({ tareKg: 1800, gvmKg: 2300 }).reasons.map((r) => r.text).join(" "), "only 500");
+    eq(reasonIds(discs({ tareKg: 1800, gvmKg: 2300 })).split(",")[1], "low-payload");
+    eq(reasonIds(discs({ vehicleType: "motorCar" })), "manufacturer", "type chosen in advanced is used");
+  });
+  test("simple: a failing brake shows red", () => {
+    eq(discs({ trailerBrake: "none" }).overall, "fail");
+  });
+
   // ------------------------------------------------------------ compact citations (ui.js)
   const UI = window.TOWING_UI;
   test("every legal rule and definition has a short regulation number", () => {

@@ -40,13 +40,15 @@
 
   <main id="main" class="wrap">
     <section class="intro">
+      <p class="disclaimer-link"><a href="#disclaimer">Legal disclaimer</a></p>
       <h1>SA Towing Check</h1>
       <p class="lede">Is your car or bakkie plus trailer legal on South African roads? Enter what's on your licence disc and the trailer's plate to check your licence code, trailer brakes, speed limit and overloading, plus your vehicle's payload, GCM and tow ball ratings. Every rule links to its source.</p>
       <p class="privacy">Everything is worked out in your browser. Nothing you enter is sent anywhere; page visits are counted anonymously, without cookies.</p>
     </section>
 
     <div class="modes" role="group" aria-label="What do you want to do?">
-      <button type="button" class="mode-button" data-mode="check" aria-pressed="true">Check my rig</button>
+      <button type="button" class="mode-button" data-mode="simple" aria-pressed="true">Check my rig <small>simple</small></button>
+      <button type="button" class="mode-button" data-mode="check" aria-pressed="false">Check my rig <small>advanced</small></button>
       <button type="button" class="mode-button" data-mode="tow" aria-pressed="false">What can I tow?</button>
       <button type="button" class="mode-button" data-mode="compare" aria-pressed="false">Car vs bakkie</button>
     </div>
@@ -54,206 +56,256 @@
 
     <div class="layout">
       <form id="rig-form" class="inputs" autocomplete="off" novalidate>
-        <fieldset>
-          <legend>Tow vehicle</legend>
-
-          <div class="field" data-modes="check tow">
-            <span class="label" id="vehicle-type-label">Vehicle type (as registered) <small>(optional)</small></span>
-            <div class="choice" role="radiogroup" aria-labelledby="vehicle-type-label">
-              <label><input type="radio" name="vehicleType" value="goodsVehicle"><span>Goods vehicle <small>e.g. single cab bakkie, LDV</small></span></label>
-              <label><input type="radio" name="vehicleType" value="motorCar"><span>Motor car <small>e.g. sedan, SUV</small></span></label>
-              <label class="choice-wide"><input type="radio" name="vehicleType" value="" checked><span>Not sure <small>show both where the rules differ</small></span></label>
+        <!-- Simple check: the figures from the two licence discs. These inputs
+             mirror the advanced form's (data-mirror), so values carry across modes. -->
+        <fieldset class="disc-fieldset" data-modes="simple">
+          <legend>Your vehicle's licence disc</legend>
+          <p class="hint fieldset-hint">Copy the two numbers printed side by side on the disc in your windscreen.</p>
+          <div class="disc" role="group" aria-label="Vehicle licence disc">
+            <span class="disc-caption">Vehicle licence disc</span>
+            <span class="disc-skip">Licence no. · Make · VIN</span>
+            <div class="disc-fields">
+              <label class="disc-field"><span class="disc-label">Tare</span><input type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2100" data-mirror="tareKg"><span class="disc-unit">kg</span></label>
+              <label class="disc-field"><span class="disc-label">GVM</span><input type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 3100" data-mirror="gvmKg"><span class="disc-unit">kg</span></label>
             </div>
-            <p class="hint">This isn't about body style or comfort. SA law has extra towing rules for goods vehicles, so the answer changes your legal results. Double cab? It can be either: check your registration papers, or choose Not sure.</p>
-            <details class="help">
-              <summary>Why does this matter?</summary>
-              <div class="help-body">
-                <p>Your weights and manufacturer limits are the same either way. What changes is which laws apply. A goods vehicle:</p>
-                <ul>
-                  <li>is limited to 100 km/h, and has to show a speed sign, once its GVM plus the trailer's GVM is over 3&nbsp;500&nbsp;kg (most bakkie and caravan rigs)</li>
-                  <li>commits an offence if it goes over its GVM, an axle rating or its GCM (for a motor car this is a safety and insurance issue, not an offence)</li>
-                  <li>must keep the whole rig under 5 times the load on its driving axle(s)</li>
-                  <li>needs a licence code based on its GVM rather than its tare</li>
-                </ul>
-                <p>Not sure which applies? Try <strong>Car vs bakkie</strong> above to compare both.</p>
-              </div>
-            </details>
-            <details class="help" data-rule-help="def-vehicle-type-from-papers">
-              <summary>Which one is my vehicle?</summary>
-              <div class="help-body"></div>
-            </details>
-          </div>
-
-          <div class="field">
-            <label for="tareKg">Tare</label>
-            <div class="unit-input"><input id="tareKg" name="tareKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2100"><span>kg</span></div>
-            <p class="hint">Printed on your licence disc and registration certificate.</p>
-          </div>
-
-          <div class="field">
-            <label for="gvmKg">GVM</label>
-            <div class="unit-input"><input id="gvmKg" name="gvmKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 3100"><span>kg</span></div>
-            <p class="hint">Maximum laden mass from the manufacturer: compliance plate or owner's manual.</p>
-          </div>
-
-          <div class="field" data-modes="check compare">
-            <label for="drive">Drive</label>
-            <select id="drive" name="drive">
-              <option value="">Choose…</option>
-              <option value="rwd">2WD, rear-wheel drive (most bakkies)</option>
-              <option value="fwd">2WD, front-wheel drive</option>
-              <option value="4wd">4x4 / AWD</option>
-            </select>
+            <span class="disc-skip">Test date · Persons</span>
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend>Driver</legend>
+        <fieldset data-modes="simple">
+          <legend>Your driving licence</legend>
           <div class="field">
-            <label for="licenceCode">Licence code</label>
-            <select id="licenceCode" name="licenceCode">
-              <option value="">Not sure / show me what I need</option>
-              <option value="B">B</option>
-              <option value="EB">EB</option>
-              <option value="C1">C1</option>
-              <option value="EC1">EC1</option>
-              <option value="C">C</option>
-              <option value="EC">EC</option>
-            </select>
+            <label for="simpleLicenceCode">Licence code</label>
+            <select id="simpleLicenceCode" data-mirror="licenceCode"></select>
+            <p class="hint">Printed on your driving licence card, for example B or EB.</p>
           </div>
         </fieldset>
 
-        <fieldset data-modes="check compare">
-          <legend>Trailer</legend>
+        <fieldset class="disc-fieldset" data-modes="simple">
+          <legend>Your trailer's licence disc</legend>
+          <p class="hint fieldset-hint">Caravans and trailers have their own disc. Leave it blank if you're not towing.</p>
+          <div class="disc disc--trailer" role="group" aria-label="Trailer licence disc">
+            <span class="disc-caption">Trailer licence disc</span>
+            <span class="disc-skip">Licence no. · Make · VIN</span>
+            <div class="disc-fields">
+              <label class="disc-field"><span class="disc-label">Tare</span><input type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 1500" data-mirror="trailerTareKg"><span class="disc-unit">kg</span></label>
+              <label class="disc-field"><span class="disc-label">GVM</span><input type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2000" data-mirror="trailer1GvmKg"><span class="disc-unit">kg</span></label>
+            </div>
+            <span class="disc-skip">Test date</span>
+          </div>
           <div class="field">
-            <label for="trailerCount">Number of trailers</label>
-            <select id="trailerCount" name="trailerCount">
-              <option value="0">None</option>
-              <option value="1" selected>One</option>
-              <option value="2">Two</option>
-            </select>
-          </div>
-
-          <div class="field" data-trailer="1">
-            <label for="trailer1GvmKg">Trailer plated GVM</label>
-            <div class="unit-input"><input id="trailer1GvmKg" name="trailer1GvmKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2000"><span>kg</span></div>
-            <p class="hint">From the trailer's licence disc or compliance plate, not what it weighs today.</p>
-          </div>
-
-          <div class="field" data-trailer="2" hidden>
-            <label for="trailer2GvmKg">Second trailer plated GVM</label>
-            <div class="unit-input"><input id="trailer2GvmKg" name="trailer2GvmKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
-          </div>
-
-          <div class="field" data-trailer="1">
-            <label for="trailerBrake">Trailer brakes</label>
-            <select id="trailerBrake" name="trailerBrake">
-              <option value="">Choose…</option>
-              <option value="none">None (parking brake only)</option>
-              <option value="overrun">Overrun brake (typical caravan)</option>
-              <option value="service">Service brake (driver-operated from the cab)</option>
-            </select>
-            <p class="hint" data-trailer="2" hidden>With two trailers, choose the weaker brakes of the two.</p>
+            <label for="simpleTrailerBrake">Trailer brakes <small>(not on the disc)</small></label>
+            <select id="simpleTrailerBrake" data-mirror="trailerBrake"></select>
             <details class="help" data-rule-help="def-overrun-service-brake">
               <summary>Overrun or service brake?</summary>
               <div class="help-body"></div>
             </details>
           </div>
-
-          <div class="field" data-trailer="1">
-            <label for="towballKg">Tow ball (nose) mass</label>
-            <div class="unit-input"><input id="towballKg" name="towballKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 180"><span>kg</span></div>
-            <p class="hint">Weigh it with a tow ball scale, with the trailer loaded for the trip.</p>
-          </div>
-
-          <div class="field-row" data-trailer="1">
-            <div class="field">
-              <label for="trailerTareKg">Trailer tare</label>
-              <div class="unit-input"><input id="trailerTareKg" name="trailerTareKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
-            </div>
-            <div class="field">
-              <label for="trailerActualKg">Trailer actual mass</label>
-              <div class="unit-input"><input id="trailerActualKg" name="trailerActualKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
-            </div>
-          </div>
-          <p class="hint field-row-hint" data-trailer="1">Optional. Actual mass is what the loaded trailer weighs (all trailers together). Without it, manufacturer checks use the plated GVM.</p>
         </fieldset>
 
-        <fieldset>
-          <legend>Manufacturer ratings</legend>
-          <p class="hint fieldset-hint">Optional. From the owner's manual, compliance plate or towbar plate.</p>
-          <div class="field">
-            <label for="gcmKg">GCM (vehicle + trailer)</label>
-            <div class="unit-input"><input id="gcmKg" name="gcmKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label for="brakedCapacityKg">Towing capacity, braked</label>
-              <div class="unit-input"><input id="brakedCapacityKg" name="brakedCapacityKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
-            </div>
-            <div class="field">
-              <label for="unbrakedCapacityKg">Towing capacity, unbraked</label>
-              <div class="unit-input"><input id="unbrakedCapacityKg" name="unbrakedCapacityKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
-            </div>
-          </div>
-          <div class="field" data-modes="check compare">
-            <label for="maxTowballKg">Maximum tow ball mass</label>
-            <div class="unit-input"><input id="maxTowballKg" name="maxTowballKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
-          </div>
-          <div class="field-row" data-modes="check compare">
-            <div class="field">
-              <label for="frontAxleRatingKg">Front axle rating</label>
-              <div class="unit-input"><input id="frontAxleRatingKg" name="frontAxleRatingKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
-            </div>
-            <div class="field">
-              <label for="rearAxleRatingKg">Rear axle rating</label>
-              <div class="unit-input"><input id="rearAxleRatingKg" name="rearAxleRatingKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
-            </div>
-          </div>
-        </fieldset>
+        <div class="advanced-inputs" data-modes="check tow compare">
+          <fieldset>
+            <legend>Tow vehicle</legend>
 
-        <fieldset>
-          <legend>Load in the vehicle</legend>
-          <p class="hint fieldset-hint">Everything the vehicle carries, including the driver. The starting masses are rough guesses: replace them with your own. Leave out the tow ball mass here; it goes under Trailer.</p>
-          <div id="load-list" class="load-list"></div>
-          <div class="load-add">
-            <label for="load-preset" class="visually-hidden">Item to add</label>
-            <select id="load-preset"></select>
-            <button type="button" id="load-add" class="button button--ghost">Add</button>
-          </div>
-          <p class="load-total">Load total: <strong id="load-total">0 kg</strong></p>
-        </fieldset>
-
-        <fieldset data-modes="check compare">
-          <details class="fieldset-details" id="weighbridge-details">
-            <summary>Weighbridge and <span class="summary-tail">measurements <small>(optional)</small></span></summary>
-            <p class="hint fieldset-hint">Readings taken with the trailer hitched and everything loaded for the trip. They replace the estimates.</p>
-            <div class="field-row">
-              <div class="field">
-                <label for="wbFrontAxleKg">Front axle</label>
-                <div class="unit-input"><input id="wbFrontAxleKg" name="wbFrontAxleKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+            <div class="field" data-modes="check tow">
+              <span class="label" id="vehicle-type-label">Vehicle type (as registered) <small>(optional)</small></span>
+              <div class="choice" role="radiogroup" aria-labelledby="vehicle-type-label">
+                <label><input type="radio" name="vehicleType" value="goodsVehicle"><span>Goods vehicle <small>e.g. single cab bakkie, LDV</small></span></label>
+                <label><input type="radio" name="vehicleType" value="motorCar"><span>Motor car <small>e.g. sedan, SUV</small></span></label>
+                <label class="choice-wide"><input type="radio" name="vehicleType" value="" checked><span>Not sure <small>show both where the rules differ</small></span></label>
               </div>
-              <div class="field">
-                <label for="wbRearAxleKg">Rear axle</label>
-                <div class="unit-input"><input id="wbRearAxleKg" name="wbRearAxleKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
-              </div>
+              <p class="hint">This isn't about body style or comfort. SA law has extra towing rules for goods vehicles, so the answer changes your legal results. Double cab? It can be either: check your registration papers, or choose Not sure.</p>
+              <details class="help">
+                <summary>Why does this matter?</summary>
+                <div class="help-body">
+                  <p>Your weights and manufacturer limits are the same either way. What changes is which laws apply. A goods vehicle:</p>
+                  <ul>
+                    <li>is limited to 100 km/h, and has to show a speed sign, once its GVM plus the trailer's GVM is over 3&nbsp;500&nbsp;kg (most bakkie and caravan rigs)</li>
+                    <li>commits an offence if it goes over its GVM, an axle rating or its GCM (for a motor car this is a safety and insurance issue, not an offence)</li>
+                    <li>must keep the whole rig under 5 times the load on its driving axle(s)</li>
+                    <li>needs a licence code based on its GVM rather than its tare</li>
+                  </ul>
+                  <p>Not sure which applies? Try <strong>Car vs bakkie</strong> above to compare both.</p>
+                </div>
+              </details>
+              <details class="help" data-rule-help="def-vehicle-type-from-papers">
+                <summary>Which one is my vehicle?</summary>
+                <div class="help-body"></div>
+              </details>
             </div>
+
+            <div class="field">
+              <label for="tareKg">Tare</label>
+              <div class="unit-input"><input id="tareKg" name="tareKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2100"><span>kg</span></div>
+              <p class="hint">Printed on your licence disc and registration certificate.</p>
+            </div>
+
+            <div class="field">
+              <label for="gvmKg">GVM</label>
+              <div class="unit-input"><input id="gvmKg" name="gvmKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 3100"><span>kg</span></div>
+              <p class="hint">Maximum laden mass from the manufacturer: compliance plate or owner's manual.</p>
+            </div>
+
+            <div class="field" data-modes="check compare">
+              <label for="drive">Drive</label>
+              <select id="drive" name="drive">
+                <option value="">Choose…</option>
+                <option value="rwd">2WD, rear-wheel drive (most bakkies)</option>
+                <option value="fwd">2WD, front-wheel drive</option>
+                <option value="4wd">4x4 / AWD</option>
+              </select>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Driver</legend>
+            <div class="field">
+              <label for="licenceCode">Licence code</label>
+              <select id="licenceCode" name="licenceCode">
+                <option value="">Not sure / show me what I need</option>
+                <option value="B">B</option>
+                <option value="EB">EB</option>
+                <option value="C1">C1</option>
+                <option value="EC1">EC1</option>
+                <option value="C">C</option>
+                <option value="EC">EC</option>
+              </select>
+            </div>
+          </fieldset>
+
+          <fieldset data-modes="check compare">
+            <legend>Trailer</legend>
+            <div class="field">
+              <label for="trailerCount">Number of trailers</label>
+              <select id="trailerCount" name="trailerCount">
+                <option value="0">None</option>
+                <option value="1" selected>One</option>
+                <option value="2">Two</option>
+              </select>
+            </div>
+
             <div class="field" data-trailer="1">
-              <label for="wbTrailerAxlesKg">Trailer axle(s)</label>
-              <div class="unit-input"><input id="wbTrailerAxlesKg" name="wbTrailerAxlesKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+              <label for="trailer1GvmKg">Trailer plated GVM</label>
+              <div class="unit-input"><input id="trailer1GvmKg" name="trailer1GvmKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2000"><span>kg</span></div>
+              <p class="hint">From the trailer's licence disc or compliance plate, not what it weighs today.</p>
+            </div>
+
+            <div class="field" data-trailer="2" hidden>
+              <label for="trailer2GvmKg">Second trailer plated GVM</label>
+              <div class="unit-input"><input id="trailer2GvmKg" name="trailer2GvmKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+            </div>
+
+            <div class="field" data-trailer="1">
+              <label for="trailerBrake">Trailer brakes</label>
+              <select id="trailerBrake" name="trailerBrake">
+                <option value="">Choose…</option>
+                <option value="none">None (parking brake only)</option>
+                <option value="overrun">Overrun brake (typical caravan)</option>
+                <option value="service">Service brake (driver-operated from the cab)</option>
+              </select>
+              <p class="hint" data-trailer="2" hidden>With two trailers, choose the weaker brakes of the two.</p>
+              <details class="help" data-rule-help="def-overrun-service-brake">
+                <summary>Overrun or service brake?</summary>
+                <div class="help-body"></div>
+              </details>
+            </div>
+
+            <div class="field" data-trailer="1">
+              <label for="towballKg">Tow ball (nose) mass</label>
+              <div class="unit-input"><input id="towballKg" name="towballKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 180"><span>kg</span></div>
+              <p class="hint">Weigh it with a tow ball scale, with the trailer loaded for the trip.</p>
+            </div>
+
+            <div class="field-row" data-trailer="1">
+              <div class="field">
+                <label for="trailerTareKg">Trailer tare</label>
+                <div class="unit-input"><input id="trailerTareKg" name="trailerTareKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+              </div>
+              <div class="field">
+                <label for="trailerActualKg">Trailer actual mass</label>
+                <div class="unit-input"><input id="trailerActualKg" name="trailerActualKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+              </div>
+            </div>
+            <p class="hint field-row-hint" data-trailer="1">Optional. Actual mass is what the loaded trailer weighs (all trailers together). Without it, manufacturer checks use the plated GVM.</p>
+          </fieldset>
+
+          <fieldset>
+            <legend>Manufacturer ratings</legend>
+            <p class="hint fieldset-hint">Optional. From the owner's manual, compliance plate or towbar plate.</p>
+            <div class="field">
+              <label for="gcmKg">GCM (vehicle + trailer)</label>
+              <div class="unit-input"><input id="gcmKg" name="gcmKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
             </div>
             <div class="field-row">
               <div class="field">
-                <label for="wheelbaseMm">Wheelbase</label>
-                <div class="unit-input"><input id="wheelbaseMm" name="wheelbaseMm" type="number" inputmode="numeric" min="0" step="1"><span>mm</span></div>
+                <label for="brakedCapacityKg">Towing capacity, braked</label>
+                <div class="unit-input"><input id="brakedCapacityKg" name="brakedCapacityKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
               </div>
               <div class="field">
-                <label for="rearOverhangMm">Rear axle to tow ball</label>
-                <div class="unit-input"><input id="rearOverhangMm" name="rearOverhangMm" type="number" inputmode="numeric" min="0" step="1"><span>mm</span></div>
+                <label for="unbrakedCapacityKg">Towing capacity, unbraked</label>
+                <div class="unit-input"><input id="unbrakedCapacityKg" name="unbrakedCapacityKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
               </div>
             </div>
-          </details>
-        </fieldset>
+            <div class="field" data-modes="check compare">
+              <label for="maxTowballKg">Maximum tow ball mass</label>
+              <div class="unit-input"><input id="maxTowballKg" name="maxTowballKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+            </div>
+            <div class="field-row" data-modes="check compare">
+              <div class="field">
+                <label for="frontAxleRatingKg">Front axle rating</label>
+                <div class="unit-input"><input id="frontAxleRatingKg" name="frontAxleRatingKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+              </div>
+              <div class="field">
+                <label for="rearAxleRatingKg">Rear axle rating</label>
+                <div class="unit-input"><input id="rearAxleRatingKg" name="rearAxleRatingKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Load in the vehicle</legend>
+            <p class="hint fieldset-hint">Everything the vehicle carries, including the driver. The starting masses are rough guesses: replace them with your own. Leave out the tow ball mass here; it goes under Trailer.</p>
+            <div id="load-list" class="load-list"></div>
+            <div class="load-add">
+              <label for="load-preset" class="visually-hidden">Item to add</label>
+              <select id="load-preset"></select>
+              <button type="button" id="load-add" class="button button--ghost">Add</button>
+            </div>
+            <p class="load-total">Load total: <strong id="load-total">0 kg</strong></p>
+          </fieldset>
+
+          <fieldset data-modes="check compare">
+            <details class="fieldset-details" id="weighbridge-details">
+              <summary>Weighbridge and <span class="summary-tail">measurements <small>(optional)</small></span></summary>
+              <p class="hint fieldset-hint">Readings taken with the trailer hitched and everything loaded for the trip. They replace the estimates.</p>
+              <div class="field-row">
+                <div class="field">
+                  <label for="wbFrontAxleKg">Front axle</label>
+                  <div class="unit-input"><input id="wbFrontAxleKg" name="wbFrontAxleKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                </div>
+                <div class="field">
+                  <label for="wbRearAxleKg">Rear axle</label>
+                  <div class="unit-input"><input id="wbRearAxleKg" name="wbRearAxleKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                </div>
+              </div>
+              <div class="field" data-trailer="1">
+                <label for="wbTrailerAxlesKg">Trailer axle(s)</label>
+                <div class="unit-input"><input id="wbTrailerAxlesKg" name="wbTrailerAxlesKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="wheelbaseMm">Wheelbase</label>
+                  <div class="unit-input"><input id="wheelbaseMm" name="wheelbaseMm" type="number" inputmode="numeric" min="0" step="1"><span>mm</span></div>
+                </div>
+                <div class="field">
+                  <label for="rearOverhangMm">Rear axle to tow ball</label>
+                  <div class="unit-input"><input id="rearOverhangMm" name="rearOverhangMm" type="number" inputmode="numeric" min="0" step="1"><span>mm</span></div>
+                </div>
+              </div>
+            </details>
+          </fieldset>
+
+        </div>
 
         <div class="form-actions">
           <button type="button" id="load-example" class="button button--ghost" data-modes="check">Load worked example</button>
@@ -271,6 +323,11 @@
 
         <!-- Printed only: what was entered, and blanks to fill in at the weighbridge -->
         <section id="print-sheet" class="print-only" aria-hidden="true"></section>
+        <section class="panel panel--legal" aria-labelledby="simple-title" data-modes="simple">
+          <h2 id="simple-title">Your rig, from the discs <span class="panel-tag">SA law</span></h2>
+          <div id="simple-body" aria-live="polite"></div>
+        </section>
+
         <div id="overall" class="overall" role="status" aria-live="polite" data-modes="check"></div>
 
         <section id="trailer-limit" class="limit-tile" aria-labelledby="limit-title" data-modes="check"></section>
@@ -304,10 +361,11 @@
           <ul id="maker-checks" class="checks"></ul>
         </section>
 
-        <aside class="disclaimer">
-          <strong>Guidance only, not legal advice.</strong>
-          Weigh your rig on a weighbridge, and confirm with your DLTC or traffic authority before you rely on these results.
-          Every legal rule links to the official regulation it comes from; points the regulations don't settle are marked <span class="badge badge--unverified">Unverified</span>.
+        <aside id="disclaimer" class="disclaimer" aria-labelledby="disclaimer-title">
+          <h2 id="disclaimer-title">Legal disclaimer</h2>
+          <p><strong>Guidance only, not legal advice.</strong> Every legal rule links to the official regulation it comes from; points the regulations don't settle are marked <span class="badge badge--unverified">Unverified</span>.</p>
+          <p>Verified only means I found official documentation. This alone is not legal advice either.</p>
+          <p>Weigh your rig on a weighbridge, and confirm with your DLTC or traffic authority before you rely on these results.</p>
         </aside>
 
         <section class="explainers" aria-label="Explainers">

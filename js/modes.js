@@ -227,7 +227,69 @@
     return { ready: true, rows, differences: rows.filter((r) => !r.same).length };
   }
 
-  const api = { whatCanITow, compareBodyTypes, speedThresholds, licenceClass, summarise, BRAKES };
+  // ------------------------------------------------------------------ simple check
+  // Only what's on the two licence discs, plus licence code and trailer
+  // brakes. Vehicle type isn't asked (it's used if chosen in the advanced
+  // check), so type-dependent results usually show both.
+  // raw: { tareKg, gvmKg, licenceCode, trailerTareKg, trailerGvmKg, trailerBrake, vehicleType? }
+  const SIMPLE_CHECKS = ["licence", "brakes", "speed"];
+
+  function simpleInput(raw) {
+    return {
+      vehicleType: raw.vehicleType || "",
+      tareKg: raw.tareKg,
+      gvmKg: raw.gvmKg,
+      licenceCode: raw.licenceCode || "",
+      trailers: isNum(raw.trailerGvmKg) ? [{ gvmKg: raw.trailerGvmKg }] : [],
+      trailerBrake: isNum(raw.trailerGvmKg) ? raw.trailerBrake || "" : "",
+      trailerTareKg: raw.trailerTareKg,
+      loadItems: [],
+      weighbridge: {},
+    };
+  }
+
+  function simpleCheck(raw) {
+    if (!isNum(raw.tareKg) || !isNum(raw.gvmKg))
+      return { ready: false, reason: "Enter the tare and GVM from your vehicle's licence disc." };
+    const input = simpleInput(raw);
+    const checks = C.runLegalChecks(input).checks.filter((c) => SIMPLE_CHECKS.indexOf(c.id) !== -1);
+    const towing = input.trailers.length > 0;
+
+    const payload = (gvm, tare) => (isNum(gvm) && isNum(tare) && gvm > tare ? gvm - tare : null);
+    const limit = towing && input.trailerBrake ? M.trailerLimit(input) : null;
+    const figures = {
+      vehiclePayloadKg: payload(input.gvmKg, input.tareKg),
+      trailerPayloadKg: towing ? payload(raw.trailerGvmKg, raw.trailerTareKg) : null,
+      // legal cap only: no manufacturer ratings in the simple check. null with
+      // a brake chosen = no legal cap (service brake, licence covers it)
+      heaviestTrailerKg: limit ? limit.limitKg : null,
+      heaviestTrailerSetBy: limit && limit.limitKg !== null ? limit.candidates.filter((c) => c.binding).map((c) => c.label) : [],
+      brakeChosen: Boolean(input.trailerBrake),
+    };
+
+    // Reasons to do the advanced check, most specific first.
+    const reasons = [];
+    if (checks.some((c) => c.variants && !c.variantsSame))
+      reasons.push({
+        id: "vehicle-type",
+        text: "Some results depend on whether your vehicle is registered as a motor car or a goods vehicle. Choose it in the advanced check.",
+      });
+    const low = R.settings.simpleLowPayloadKg;
+    if (figures.vehiclePayloadKg !== null && figures.vehiclePayloadKg < low)
+      reasons.push({
+        id: "low-payload",
+        text: `Your vehicle can carry only ${kg(figures.vehiclePayloadKg)} (GVM − tare), and people, fuel, luggage and the trailer's tow ball all count. Add your load in the advanced check to make sure you're under the GVM.`,
+      });
+    if (towing)
+      reasons.push({
+        id: "manufacturer",
+        text: "Your vehicle's towing capacity, GCM and tow ball limit (in the owner's manual) can be lower than the law allows. The advanced check compares them.",
+      });
+
+    return { ready: true, input, checks, overall: C.worstStatus(checks), figures, reasons, towing };
+  }
+
+  const api = { whatCanITow, compareBodyTypes, simpleCheck, speedThresholds, licenceClass, summarise, BRAKES };
   if (isNode) module.exports = api;
   else root.TOWING_MODES = api;
 })(typeof window !== "undefined" ? window : globalThis);

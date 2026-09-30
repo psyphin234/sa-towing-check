@@ -564,8 +564,11 @@
     { text: "Have any amendments since the 25th amendment (GN 45901 of February 2022) changed these rules?", ruleIds: [] },
   ];
 
-  // Display settings (not law): when a mass counts as "close to the limit" (amber).
-  const settings = { nearLimitFraction: 0.95 };
+  // Display settings (not law): when a mass counts as "close to the limit"
+  // (amber); and in the simple check, a payload (GVM − tare) below which a
+  // family, fuel, luggage and the tow ball could plausibly use it all up, so
+  // the advanced check is worth doing. A rule of thumb, not a legal limit.
+  const settings = { nearLimitFraction: 0.95, simpleLowPayloadKg: 600 };
 
   // Load list presets. Typical starting masses only, NOT data about any product:
   // the UI asks people to replace them with their own weighed figures.

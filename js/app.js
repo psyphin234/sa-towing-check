@@ -14,20 +14,25 @@
 
   // ---------------------------------------------------------------- modes
   const MODES = {
+    simple: "Copy the numbers from your two licence discs for a quick legal check.",
     check: "Enter your vehicle, trailer and load to check everything at once.",
     tow: "Enter your vehicle and licence code to see the heaviest trailer you may tow with each type of brakes.",
     compare: "See how the rules change when the same vehicle is registered as a motor car or as a goods vehicle.",
   };
-  let mode = "check";
+  // URL hash for each mode (none for the default, simple). "#check" was the
+  // advanced check's old name; it still works.
+  const MODE_HASH = { simple: "", check: "advanced", tow: "tow", compare: "compare" };
+  const HASH_MODE = { "": "simple", advanced: "check", check: "check", tow: "tow", compare: "compare" };
+  let mode = "simple";
 
   function setMode(next, updateHash) {
-    mode = MODES[next] ? next : "check";
+    mode = MODES[next] ? next : "simple";
     document.querySelectorAll(".mode-button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
     document.querySelectorAll("[data-modes]").forEach((node) => {
       node.hidden = node.dataset.modes.split(" ").indexOf(mode) === -1;
     });
     document.getElementById("mode-hint").textContent = MODES[mode];
-    if (updateHash) history.replaceState(null, "", mode === "check" ? location.pathname : "#" + mode);
+    if (updateHash) history.replaceState(null, "", MODE_HASH[mode] ? "#" + MODE_HASH[mode] : location.pathname);
   }
 
   const form = document.getElementById("rig-form");
@@ -482,8 +487,79 @@
     );
   }
 
+  // ---------------------------------------------------------------- simple check
+  function simpleRaw() {
+    return {
+      tareKg: num("tareKg"),
+      gvmKg: num("gvmKg"),
+      licenceCode: form.elements.licenceCode.value,
+      trailerTareKg: num("trailerTareKg"),
+      trailerGvmKg: num("trailer1GvmKg"),
+      trailerBrake: form.elements.trailerBrake.value,
+      vehicleType: form.elements.vehicleType.value, // only set in the advanced check
+    };
+  }
+
+  function figureTile(label, value, sub) {
+    return el(
+      "div",
+      { class: "figure" },
+      el("span", { class: "figure-label" }, label),
+      el("span", { class: "figure-value" }, value),
+      sub ? el("span", { class: "figure-sub" }, sub) : null
+    );
+  }
+
+  function renderSimple() {
+    const body = document.getElementById("simple-body");
+    const s = MD.simpleCheck(simpleRaw());
+    if (!s.ready) {
+      body.replaceChildren(el("p", { class: "muted" }, s.reason));
+      return s;
+    }
+    const f = s.figures;
+    const tiles = [
+      f.vehiclePayloadKg !== null
+        ? figureTile("Your vehicle can carry", C.kg(f.vehiclePayloadKg), "GVM − tare: people, fuel, luggage and the trailer's tow ball")
+        : null,
+      f.trailerPayloadKg !== null ? figureTile("Your trailer can carry", C.kg(f.trailerPayloadKg), "Trailer GVM − tare") : null,
+      s.towing && f.brakeChosen
+        ? figureTile(
+            "Heaviest trailer the law allows",
+            f.heaviestTrailerKg === null ? "No legal cap" : C.kg(f.heaviestTrailerKg),
+            f.heaviestTrailerKg === null
+              ? "With a service brake. Your vehicle's own towing limits still apply."
+              : "Trailer GVM, with these brakes. Set by: " + f.heaviestTrailerSetBy.join("; ").toLowerCase() + "."
+          )
+        : null,
+    ].filter(Boolean);
+
+    const specific = s.reasons.filter((r) => r.id !== "manufacturer").length > 0;
+    body.replaceChildren(
+      el(
+        "div",
+        { class: "overall overall--" + s.overall, role: "status" },
+        el("span", { class: "status-icon", "aria-hidden": "true" }, STATUS_ICON[s.overall]),
+        el("span", null, OVERALL_TEXT[s.overall])
+      ),
+      tiles.length ? el("div", { class: "figures" }, tiles) : null,
+      el("ul", { class: "checks" }, s.checks.map((c) => renderCheck(c, LEGAL_STATUS_LABEL))),
+      el(
+        "div",
+        { class: "advanced-note" + (specific ? " advanced-note--flag" : "") },
+        el("h3", null, specific ? "Worth a closer look" : "Want the full picture?"),
+        s.reasons.length
+          ? el("ul", null, s.reasons.map((r) => el("li", null, r.text)))
+          : el("p", null, "This check uses only your licence discs. The advanced check adds what you load, your vehicle's own towing limits and weighbridge readings."),
+        el("button", { type: "button", class: "button button--primary", "data-open-advanced": "" }, "Open the advanced check")
+      )
+    );
+    return s;
+  }
+
   // ---------------------------------------------------------------- print sheet (weighbridge day)
   const PRINT_TITLE = {
+    simple: "Rig check (simple): from the licence discs",
     check: "Rig check: weighbridge summary",
     tow: "What can I tow?",
     compare: "Motor car vs goods vehicle",
@@ -501,39 +577,54 @@
     const add = (label, value) => {
       if (value !== null && value !== undefined && value !== "") rows.push(el("tr", null, el("th", { scope: "row" }, label), el("td", null, value)));
     };
-    if (mode !== "compare") add("Vehicle type (as registered)", VEHICLE_NAME[input.vehicleType] || "Not sure (both shown)");
-    add("Tare", kgOrNull(input.tareKg));
-    add("GVM", kgOrNull(input.gvmKg));
-    add("GCM", kgOrNull(input.gcmKg));
-    if (mode !== "tow") add("Drive", DRIVE_NAME[input.drive]);
-    add("Licence code", input.licenceCode);
-    add("Towing capacity, braked", kgOrNull(input.brakedCapacityKg));
-    add("Towing capacity, unbraked", kgOrNull(input.unbrakedCapacityKg));
-    if (mode !== "tow") {
-      add("Maximum tow ball mass", kgOrNull(input.maxTowballKg));
-      add("Axle ratings", C.isNum(input.frontAxleRatingKg) || C.isNum(input.rearAxleRatingKg)
-        ? `front ${kgOrNull(input.frontAxleRatingKg) || "—"}, rear ${kgOrNull(input.rearAxleRatingKg) || "—"}`
-        : null);
+    if (mode === "simple") {
+      // only what the simple check asked for: the two discs, licence code and brakes
+      add("Vehicle type (as registered)", VEHICLE_NAME[input.vehicleType]);
+      add("Tare (vehicle disc)", kgOrNull(input.tareKg));
+      add("GVM (vehicle disc)", kgOrNull(input.gvmKg));
+      add("Licence code", input.licenceCode);
       if (input.trailers.length) {
-        add(
-          input.trailers.length > 1 ? "Trailers, plated GVM" : "Trailer plated GVM",
-          input.trailers.map((t) => kgOrNull(t.gvmKg) || "—").join(" + ")
-        );
+        add("Trailer tare (trailer disc)", kgOrNull(input.trailerTareKg));
+        add("Trailer GVM (trailer disc)", kgOrNull(input.trailers[0].gvmKg));
         add("Trailer brakes", BRAKE_FITTED[input.trailerBrake]);
-        add("Tow ball mass", kgOrNull(input.towballKg));
-        add("Trailer tare", kgOrNull(input.trailerTareKg));
-        add("Trailer actual mass", kgOrNull(input.trailerActualKg));
       } else {
         add("Trailer", "None");
       }
-    }
-    const items = input.loadItems.filter((it) => it.kg > 0 && it.qty > 0);
-    if (items.length) {
-      add(
-        "Load in the vehicle",
-        items.map((it) => `${it.label}: ${it.qty} × ${it.kg} kg`).join("; ") +
-          ` (total ${C.kg(items.reduce((s, it) => s + it.kg * it.qty, 0))})`
-      );
+    } else {
+      if (mode !== "compare") add("Vehicle type (as registered)", VEHICLE_NAME[input.vehicleType] || "Not sure (both shown)");
+      add("Tare", kgOrNull(input.tareKg));
+      add("GVM", kgOrNull(input.gvmKg));
+      add("GCM", kgOrNull(input.gcmKg));
+      if (mode !== "tow") add("Drive", DRIVE_NAME[input.drive]);
+      add("Licence code", input.licenceCode);
+      add("Towing capacity, braked", kgOrNull(input.brakedCapacityKg));
+      add("Towing capacity, unbraked", kgOrNull(input.unbrakedCapacityKg));
+      if (mode !== "tow") {
+        add("Maximum tow ball mass", kgOrNull(input.maxTowballKg));
+        add("Axle ratings", C.isNum(input.frontAxleRatingKg) || C.isNum(input.rearAxleRatingKg)
+          ? `front ${kgOrNull(input.frontAxleRatingKg) || "—"}, rear ${kgOrNull(input.rearAxleRatingKg) || "—"}`
+          : null);
+        if (input.trailers.length) {
+          add(
+            input.trailers.length > 1 ? "Trailers, plated GVM" : "Trailer plated GVM",
+            input.trailers.map((t) => kgOrNull(t.gvmKg) || "—").join(" + ")
+          );
+          add("Trailer brakes", BRAKE_FITTED[input.trailerBrake]);
+          add("Tow ball mass", kgOrNull(input.towballKg));
+          add("Trailer tare", kgOrNull(input.trailerTareKg));
+          add("Trailer actual mass", kgOrNull(input.trailerActualKg));
+        } else {
+          add("Trailer", "None");
+        }
+      }
+      const items = input.loadItems.filter((it) => it.kg > 0 && it.qty > 0);
+      if (items.length) {
+        add(
+          "Load in the vehicle",
+          items.map((it) => `${it.label}: ${it.qty} × ${it.kg} kg`).join("; ") +
+            ` (total ${C.kg(items.reduce((s, it) => s + it.kg * it.qty, 0))})`
+        );
+      }
     }
 
     const blank = () => el("td", { class: "write-in" }, "");
@@ -569,12 +660,14 @@
 
   function render() {
     syncTrailerFields();
+    syncMirrors();
     const input = readInput();
     updateLoadTotal(input.loadItems);
+    const simple = renderSimple();
     renderTow(input);
     renderCompare(input);
     document.getElementById("rig-body").replaceChildren(window.TOWING_DIAGRAM.renderRigDiagram(M.rigDiagram(input)));
-    renderPrintSheet(input);
+    renderPrintSheet(mode === "simple" && simple.ready ? simple.input : input);
 
     const legal = C.runLegalChecks(input);
     overallBox.className = "overall overall--" + legal.overall;
@@ -628,6 +721,33 @@
     );
   }
 
+  // ---------------------------------------------------------------- simple-mode mirrors
+  // The simple check's disc inputs (data-mirror="<name>") are copies of the
+  // advanced form's fields, so one set of values serves every mode.
+  const mirrors = Array.from(form.querySelectorAll("[data-mirror]"));
+
+  function setUpMirrors() {
+    mirrors.forEach((m) => {
+      const source = form.elements[m.dataset.mirror];
+      if (m.tagName === "SELECT") m.replaceChildren(...Array.from(source.options).map((o) => o.cloneNode(true)));
+      const copy = () => {
+        source.value = m.value;
+        // a trailer disc filled in means one trailer
+        if (m.dataset.mirror === "trailer1GvmKg" && m.value && form.elements.trailerCount.value === "0")
+          form.elements.trailerCount.value = "1";
+      };
+      m.addEventListener("input", copy); // runs before the form's own listener re-renders
+      m.addEventListener("change", copy);
+    });
+  }
+
+  function syncMirrors() {
+    mirrors.forEach((m) => {
+      const value = form.elements[m.dataset.mirror].value;
+      if (m.value !== value && document.activeElement !== m) m.value = value;
+    });
+  }
+
   function clearForm() {
     form.reset();
     loadList.replaceChildren();
@@ -664,6 +784,12 @@
   document.getElementById("load-example").addEventListener("click", loadExample);
   document.addEventListener("click", (e) => {
     if (e.target.closest("[data-load-example]")) loadExample();
+    if (e.target.closest("[data-open-advanced]")) {
+      // values carry over: the simple inputs are the advanced form's fields
+      setMode("check", true);
+      render();
+      document.querySelector(".modes").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   });
 
   document.querySelectorAll("[data-print]").forEach((b) =>
@@ -678,6 +804,10 @@
     e.preventDefault();
     document.querySelector(".results").scrollIntoView({ behavior: "smooth", block: "start" });
   });
+  document.querySelector(".disclaimer-link a").addEventListener("click", (e) => {
+    e.preventDefault();
+    document.getElementById("disclaimer").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
   document.querySelectorAll(".mode-button").forEach((b) =>
     b.addEventListener("click", () => {
@@ -687,16 +817,17 @@
   );
 
   document.getElementById("year").textContent = new Date().getFullYear();
+  setUpMirrors();
   fillHelp();
   fillExplainers();
-  // index.html#example opens with the worked example filled in (a shareable
-  // link); #tow and #compare open those modes.
+  // index.html#example opens the advanced check with the worked example filled
+  // in (a shareable link); #advanced, #tow and #compare open those modes.
   const hash = location.hash.slice(1);
   if (hash === "example") {
     loadExample(false);
     history.replaceState(null, "", "#example");
   } else {
-    setMode(hash, false);
+    setMode(HASH_MODE[hash] || "simple", false);
     render();
   }
 })();

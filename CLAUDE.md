@@ -57,7 +57,9 @@ To re-verify after a new amendment:
 
 ## Modes
 
-One form, three modes (buttons above the form; the URL hash holds the mode: none/`#check`, `#tow`, `#compare`; `#example` loads the worked example in check mode).
+One form, four modes (buttons above the form; the URL hash holds the mode: none = **Check my rig (simple)**, the default; `#advanced` = **Check my rig (advanced)**, internally mode `check` (old `#check` links still work); `#tow`; `#compare`; `#example` loads the worked example in the advanced check).
+
+- **Simple check** (`simpleCheck()` in modes.js): only the two licence discs (vehicle tare + GVM, trailer tare + GVM), licence code and trailer brakes (brakes aren't on the disc). The disc inputs are drawn as a disc and carry `data-mirror="<field name>"`: app.js copies them to and from the advanced form's fields, so one set of values serves every mode (no second source of truth). It shows payload figures, the legal heaviest trailer, the licence/brakes/speed cards, and a box of reasons to open the advanced check (type-dependent results, payload under `settings.simpleLowPayloadKg`, and towing capacity/GCM when towing). A vehicle type chosen in the advanced check is used here too. The disc drawing shows only the two fields people copy, with the rest named faintly for recognition; it must never look like a real disc (no crest, barcode or numbers).
 
 - Elements carry `data-modes="check tow compare"` (any subset); `setMode()` in app.js hides the rest. Inputs keep their values across modes.
 - `[hidden] { display: none !important }` in style.css is what makes hiding work on elements with their own `display` rule. Keep it.
