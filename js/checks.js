@@ -420,14 +420,15 @@
   }
 
   // ------------------------------------------------------------------ tow ball mass (VC 8026 via reg 216)
-  // A grey area (see the rule's notes), but the checker treats 100 kg as the
-  // maximum for a caravan or light trailer.
+  // A grey area (see the rule's notes): probably not enforceable as law on its
+  // own, so outside 25–100 kg is amber ("recommended"), never red "Not legal".
+  // statusLabel overrides the card's usual status wording.
   function towballLegalCheck(input) {
     const t = trailerSum(input);
     if (t.count === 0) return null;
     const p = R.get("vc8026-towball-limit").params;
     const ids = ["vc8026-towball-limit"];
-    const title = "Tow ball mass (25–100 kg)";
+    const title = "Tow ball mass (25–100 kg recommended)";
     const range = `${kg(p.minKg)} to ${kg(p.maxKg)}`;
     if ((input.trailers || []).some((tr) => isNum(tr.gvmKg) && tr.gvmKg > p.maxTrailerGvmKg))
       return result(
@@ -446,23 +447,34 @@
         ids
       );
     const tb = input.towballKg;
+    const grey = "The caravan and light trailer specification sets this range; whether it's enforceable law is a grey area (see the source link).";
     if (tb > p.maxKg)
-      return result(
-        "towball-legal",
-        title,
-        "fail",
-        `${kg(tb)} on the tow ball is over the ${kg(p.maxKg)} maximum for a caravan or light trailer. Move load back towards the trailer's axle.`,
-        ids
+      return Object.assign(
+        result(
+          "towball-legal",
+          title,
+          "warn",
+          `${kg(tb)} on the tow ball is over the recommended ${kg(p.maxKg)} maximum for a caravan or light trailer. Move load back towards the trailer's axle.`,
+          ids,
+          [grey]
+        ),
+        { statusLabel: "Over recommended" }
       );
     if (tb < p.minKg)
-      return result(
-        "towball-legal",
-        title,
-        "fail",
-        `${kg(tb)} on the tow ball is under the ${kg(p.minKg)} minimum for a caravan or light trailer. Move load forward, over the trailer's axle.`,
-        ids
+      return Object.assign(
+        result(
+          "towball-legal",
+          title,
+          "warn",
+          `${kg(tb)} on the tow ball is under the recommended ${kg(p.minKg)} minimum for a caravan or light trailer. Move load forward, over the trailer's axle.`,
+          ids,
+          [grey]
+        ),
+        { statusLabel: "Under recommended" }
       );
-    return result("towball-legal", title, "pass", `${kg(tb)} on the tow ball: within ${range}.`, ids);
+    return Object.assign(result("towball-legal", title, "pass", `${kg(tb)} on the tow ball: within the recommended ${range}.`, ids), {
+      statusLabel: "Within recommended",
+    });
   }
 
   const DRIVE_TEXT = { rwd: "rear axle", fwd: "front axle", "4wd": "front and rear axles" };

@@ -55,7 +55,7 @@ To re-verify after a new amendment:
 - Best source first: weighbridge readings (taken **with the trailer hitched**) > entered trailer actual mass > trailer plated GVM; the vehicle falls back to tare + load list + tow ball mass.
 - The tow ball mass is carried by the vehicle (counts against payload/GVM and the rear axle) but is part of the trailer's mass, so the combination counts it **once**: combined = (vehicle − tow ball) + trailer.
 - Legal limits (reg 151, licence) apply to the trailer's **plated GVM**; manufacturer limits to its **actual mass**. The heaviest-trailer tile says so.
-- Tow ball: `towballMax()` in ratings.js is the maximum used everywhere (tow ball card, diagram, print sheet): 100 kg for a trailer up to 3 500 kg even when the towbar is rated higher (bakkie towbars are often 300–350 kg), or the maker's figure if lower. The 7–10 % rule of thumb is capped at that maximum.
+- Tow ball: `towballMax()` in ratings.js is the maximum used everywhere (tow ball card, diagram, print sheet): the **recommended** 100 kg for a trailer up to 3 500 kg even when the towbar is rated higher (bakkie towbars are often 300–350 kg), or the maker's figure if lower. The 25–100 kg is a grey area, not clearly law, so going outside it is amber with "Over/Under recommended" labels (`statusLabel` on a check overrides the status wording), never red "Not legal"; only going over the vehicle or towbar maker's own rating is red. The 7–10 % rule of thumb is capped at 100 kg.
 - "Close to the limit" (amber) is `settings.nearLimitFraction` in rules.js. Load list presets (`loadPresets`) are rough starting masses, labelled as guesses in the UI.
 
 ## Modes

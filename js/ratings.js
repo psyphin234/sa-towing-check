@@ -154,9 +154,10 @@
   }
 
   // ------------------------------------------------------------------ tow ball
-  // The highest tow ball mass this checker accepts: 100 kg for a caravan or
-  // light trailer (VC 8026, a grey area but treated as the maximum), or the
-  // vehicle/towbar maker's maximum if that is lower. null = no limit known.
+  // The highest tow ball mass this checker accepts: the recommended 100 kg for
+  // a caravan or light trailer (VC 8026, a grey area), or the vehicle/towbar
+  // maker's maximum if that is lower. null = no limit known. Over a "legal"
+  // (recommended) maximum is amber; over the maker's own rating is red.
   // A trailer GVM not yet entered counts as light, the usual case.
   function towballMax(input) {
     const p = R.get("vc8026-towball-limit").params;
@@ -165,6 +166,15 @@
     const makerKg = isNum(input.maxTowballKg) ? input.maxTowballKg : null;
     if (light && (makerKg === null || makerKg > p.maxKg)) return { kg: p.maxKg, source: "legal", makerKg };
     return makerKg === null ? null : { kg: makerKg, source: "maker", makerKg };
+  }
+
+  // Diagram point for the tow ball: over the recommended 100 kg is amber, not red.
+  function towballPoint(point, towballKg, input) {
+    const max = towballMax(input);
+    const recommended = max && max.source === "legal";
+    const p = point(towballKg, max ? max.kg : null, "entered", recommended ? "recommended maximum" : "maximum");
+    if (recommended && p.status === "fail" && !(max.makerKg !== null && towballKg > max.makerKg)) p.status = "warn";
+    return p;
   }
 
   function towballCheck(input) {
@@ -182,14 +192,15 @@
 
     const max = towballMax(input);
     if (max) {
-      parts.push(`${kg(m.towballKg)} against the maximum of ${kg(max.kg)}.`);
-      if (m.towballKg > max.kg) status = "fail";
-      if (max.source === "legal") {
+      const recommended = max.source === "legal";
+      parts.push(`${kg(m.towballKg)} against the ${recommended ? "recommended " : ""}maximum of ${kg(max.kg)}.`);
+      if (m.towballKg > max.kg) status = recommended && !(max.makerKg !== null && m.towballKg > max.makerKg) ? "warn" : "fail";
+      if (recommended) {
         ids.push("vc8026-towball-limit");
         notes.push(
           max.makerKg !== null
-            ? `Your vehicle or towbar is rated ${kg(max.makerKg)}, but with a caravan or light trailer this checker uses ${kg(max.kg)} as the maximum (see Tow ball mass: 25–100 kg).`
-            : `${kg(max.kg)} is the maximum for a caravan or light trailer (see Tow ball mass: 25–100 kg). Check your vehicle's and towbar's own ratings too: they can be lower.`
+            ? `Your vehicle or towbar is rated ${kg(max.makerKg)}, but with a caravan or light trailer 100 kg is the recommended maximum (see Tow ball mass: 25–100 kg).`
+            : `${kg(max.kg)} is the recommended maximum for a caravan or light trailer (see Tow ball mass: 25–100 kg). Check your vehicle's and towbar's own ratings too: they can be lower.`
         );
       }
     } else {
@@ -454,7 +465,7 @@
       hasData: Boolean(m.vehicle),
       front,
       rear,
-      towball: m.trailerCount ? point(m.towballKg, (towballMax(input) || {}).kg, "entered", "maximum") : null,
+      towball: m.trailerCount ? towballPoint(point, m.towballKg, input) : null,
       trailerAxles,
       vehicle: m.vehicle ? point(m.vehicle.kg, input.gvmKg, m.vehicle.source, "GVM") : null,
       trailer,

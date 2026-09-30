@@ -227,7 +227,7 @@
         { class: "check-head" },
         el("span", { class: "status-icon", "aria-hidden": "true" }, STATUS_ICON[check.status]),
         el("h3", null, check.title),
-        el("span", { class: "status-label" }, labels[check.status])
+        el("span", { class: "status-label" }, check.statusLabel || labels[check.status])
       ),
       el("p", { class: "check-reason" }, check.reason),
       check.variants && !check.variantsSame ? el("ul", { class: "variants" }, check.variants.map((v) => renderVariant(v, labels, check.id))) : null,

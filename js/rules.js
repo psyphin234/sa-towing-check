@@ -411,7 +411,7 @@
       category: "legal",
       title: "Tow ball mass: 25–100 kg",
       summary:
-        "For a caravan or light trailer (GVM up to 3 500 kg), the compulsory specification says the static vertical load on the ball coupling, with the trailer loaded, may not be more than 100 kg or less than 25 kg. Reg 216 requires a trailer used on a public road to comply with the compulsory specifications. Whether this binds you when towing is a grey area (see notes), so this checker treats 100 kg as the maximum whatever your towbar is rated for.",
+        "For a caravan or light trailer (GVM up to 3 500 kg), the compulsory specification says the static vertical load on the ball coupling, with the trailer loaded, may not be more than 100 kg or less than 25 kg. Reg 216 requires a trailer used on a public road to comply with the compulsory specifications. Whether this binds you when towing is a grey area (see notes), so this checker treats 25–100 kg as the recommended range whatever your towbar is rated for, not as a hard legal limit.",
       regulation: "Compulsory specification VC 8026 Ed. 5, cl. 3.5.2 (GN 97 of 2010), applied by National Road Traffic Regulations, reg 216(1)",
       sourceUrl: SRC.vc8026.url,
       sourceLabel: SRC.vc8026.label,
@@ -424,7 +424,7 @@
         "Reg 216(1) says a trailer operated on a public road \"shall comply with the relevant requirements\" of the compulsory specifications (those listed in Annex A to SABS 047), so a trailer loaded to more than 100 kg on the ball arguably doesn't comply. No regulation or court decision found says outright that towing with more than 100 kg on the ball is an offence.",
         "Many South African sources (CaravanSA, forums, towing guides) state 25–100 kg as the law without citing a clause. Separately, VC 8065 makes SANS 1505 compulsory for ball couplings and towing brackets: that governs how they are made and rated, not what you load.",
         "Claims found online that reg 239 makes a towbar's rated load binding are wrong: reg 239 covers GVM, axle loads, GCM, power-to-mass and the driving axle, and applies to goods vehicles, not motor cars.",
-        "Because of the possible legal consequences (a traffic officer could treat the rig as not roadworthy under section 44 of the Act), this checker uses 100 kg as the maximum tow ball mass even when the vehicle or towbar is rated higher. Confirm with your DLTC.",
+        "Because of the possible legal consequences (a traffic officer could treat the rig as not roadworthy under section 44 of the Act), this checker recommends no more than 100 kg on the tow ball even when the vehicle or towbar is rated higher, and shows more as amber, not as not legal. Confirm with your DLTC.",
       ],
     },
     {
@@ -485,7 +485,7 @@
       category: "manufacturer",
       title: "Maximum tow ball mass",
       summary:
-        "The manufacturer's maximum vertical load on the tow ball (and on the towbar's own plate, if that is lower). Many bakkie towbars are rated 300 kg or more, but with a caravan or light trailer this checker uses 100 kg as the maximum (see Tow ball mass: 25–100 kg). The tow ball mass also counts against payload.",
+        "The manufacturer's maximum vertical load on the tow ball (and on the towbar's own plate, if that is lower). Many bakkie towbars are rated 300 kg or more, but with a caravan or light trailer this checker recommends no more than 100 kg (see Tow ball mass: 25–100 kg). The tow ball mass also counts against payload.",
       regulation: "Vehicle / towbar manufacturer's rating (owner's manual, towbar plate)",
       sourceUrl: SRC.redarc.url,
       sourceLabel: SRC.redarc.label,
@@ -522,7 +522,7 @@
       category: "guidance",
       title: "Tow ball (nose) mass",
       summary:
-        "Rule of thumb: a tow ball mass of 7–10 % of the loaded trailer's actual mass, but never more than 100 kg (see Tow ball mass: 25–100 kg) or the vehicle, towbar or trailer maker's maximum, whichever is lowest. For a trailer heavier than about 1 400 kg the 100 kg cap comes first, so aim close to 100 kg. Follow your caravan maker's figure if it gives one.",
+        "Rule of thumb: a tow ball mass of 7–10 % of the loaded trailer's actual mass, but not more than the recommended 100 kg (see Tow ball mass: 25–100 kg) or the vehicle, towbar or trailer maker's maximum, whichever is lowest. For a trailer heavier than about 1 400 kg the 100 kg cap comes first, so aim close to 100 kg. Follow your caravan maker's figure if it gives one.",
       regulation: "Guidance only (the 25–100 kg limit is a separate rule)",
       sourceUrl: "https://www.redarcelectronics.com/au/discover/how-to-calculate-your-caravan-tow-ball-weight/",
       sourceLabel: "REDARC: How to calculate your caravan tow ball weight",
@@ -594,7 +594,7 @@
     { text: "For a part-time 4x4 driven in 2WD, which axles count as driving axles under reg 239(3)?", ruleIds: ["reg239-driving-axle"] },
     { text: "With two trailers, does the 750 kg licence threshold apply to the sum of the trailer GVMs? Reg 99 speaks of \"a trailer\".", ruleIds: ["reg99-licence-codes"] },
     { text: "When towing, where must the 100 km/h (or 80 km/h) sign go: on the tow vehicle, or on the rear of the trailer where it can be seen?", ruleIds: ["reg293-speed-sign"] },
-    { text: "Tow ball mass: does the 25–100 kg in compulsory specification VC 8026 bind the person towing (through reg 216), or only the trailer's design? This checker treats 100 kg as the maximum until that's settled.", ruleIds: ["vc8026-towball-limit"] },
+    { text: "Tow ball mass: does the 25–100 kg in compulsory specification VC 8026 bind the person towing (through reg 216), or only the trailer's design? This checker treats 25–100 kg as recommended, not as law, until that's settled.", ruleIds: ["vc8026-towball-limit"] },
     { text: "Have any amendments since the 25th amendment (GN 45901 of February 2022) changed these rules?", ruleIds: [] },
   ];
 

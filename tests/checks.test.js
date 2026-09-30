@@ -409,12 +409,13 @@
     eq(M.towingCapacityCheck(exampleRig({ brakedCapacityKg: null })).status, "incomplete");
     eq(M.towingCapacityCheck(exampleRig({ trailers: [] })), null);
   });
-  test("tow ball: 100 kg maximum for a light trailer, even with a 350 kg towbar", () => {
+  test("tow ball: 100 kg recommended for a light trailer, even with a 350 kg towbar", () => {
     const over = M.towballCheck(exampleRig()); // 200 kg on the ball
-    eq(over.status, "fail");
-    includes(over.reason, "maximum of 100");
+    eq(over.status, "warn", "over the recommended 100 kg: amber, not red");
+    includes(over.reason, "recommended maximum of 100");
     includes(over.notes.join(" "), "rated 350");
-    eq(M.towballCheck(exampleRig({ towballKg: 380 })).status, "fail");
+    eq(M.towballCheck(exampleRig({ towballKg: 380 })).status, "fail", "over the towbar's own 350 kg: red");
+    eq(M.towballCheck(exampleRig({ towballKg: 90, maxTowballKg: 80 })).status, "fail", "over a lower maker rating: red");
     const atCap = M.towballCheck(exampleRig({ towballKg: 100 })); // 4 % of a 2 500 kg caravan
     eq(atCap.status, "pass", "rule of thumb capped at 100 kg");
     includes(atCap.reason, "aim close to 100");
@@ -432,11 +433,15 @@
     eq(M.towballMax(exampleRig({ trailers: trailer(4000) })).kg, 350, "over 3 500 kg: VC 8026 doesn't apply");
     eq(M.towballMax(exampleRig({ trailers: trailer(4000), maxTowballKg: null })), null);
   });
-  test("tow ball legal check: 25–100 kg, reminder when not entered", () => {
+  test("tow ball check: 25–100 kg recommended (amber, never not legal)", () => {
     const c = (o) => C.towballLegalCheck(exampleRig(o));
-    eq(c({}).status, "fail", "200 kg");
+    eq(c({}).status, "warn", "200 kg");
+    eq(c({}).statusLabel, "Over recommended");
+    includes(c({}).notes.join(" "), "grey area");
     eq(c({ towballKg: 100 }).status, "pass");
-    eq(c({ towballKg: 20 }).status, "fail", "under 25 kg");
+    eq(c({ towballKg: 100 }).statusLabel, "Within recommended");
+    eq(c({ towballKg: 20 }).status, "warn", "under 25 kg");
+    eq(c({ towballKg: 20 }).statusLabel, "Under recommended");
     eq(c({ towballKg: null }).status, "info");
     includes(c({ towballKg: null }).reason, "whatever your towbar is rated for");
     eq(c({ trailers: trailer(4000) }).status, "info", "heavy trailer: not covered");
@@ -503,7 +508,7 @@
     eq(d.front.status, "none");
     eq(d.towball.kg, 200);
     eq(d.towball.limit, 100, "capped for a light trailer, not the towbar's 350 kg");
-    eq(d.towball.status, "fail");
+    eq(d.towball.status, "warn", "over the recommended 100 kg: amber");
     eq(d.trailerAxles.kg, 2300, "trailer axle = trailer - tow ball");
     eq(d.trailerAxles.source, "estimate");
     eq(d.trailer.limit, null, "plated trailer not compared with itself");
