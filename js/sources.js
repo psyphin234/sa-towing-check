@@ -1,7 +1,7 @@
 /*
  * sources.js: builds sources.html from rules.js: a status summary, the open
  * questions still to settle, then every rule grouped by category. Each rule
- * has an anchor (#rule-id) that the checker's citation badges link to.
+ * has an anchor (#rule-id) that the checker's "Read more" rule links point to.
  */
 (function () {
   "use strict";

@@ -10,7 +10,7 @@
   const C = window.TOWING_CHECKS;
   const M = window.TOWING_RATINGS;
   const MD = window.TOWING_MODES;
-  const { el, citation } = window.TOWING_UI;
+  const { el, ruleLinks } = window.TOWING_UI;
 
   // ---------------------------------------------------------------- modes
   const MODES = {
@@ -177,8 +177,26 @@
     );
   }
 
+  // Toggles in the results are rebuilt on every input; remember which are
+  // open so they don't snap shut while someone types.
+  const openToggles = new Set();
+
+  function toggle(key, cls, summaryText, content) {
+    const box = el("details", { class: cls, open: openToggles.has(key) }, el("summary", null, summaryText), content);
+    box.addEventListener("toggle", () => (box.open ? openToggles.add(key) : openToggles.delete(key)));
+    return box;
+  }
+
+  // A card's explanatory notes, folded away so the result and figures stand
+  // out. A closed toggle can't print its contents, so print gets its own copy.
+  function notesToggle(key, notes) {
+    if (!notes.length) return null;
+    const list = (cls) => el("ul", { class: cls }, notes.map((n) => el("li", null, n)));
+    return [toggle("notes:" + key, "more-detail", "More detail", list("check-notes")), list("check-notes print-only")];
+  }
+
   // One vehicle type's outcome, when the type was left blank.
-  function renderVariant(v, labels) {
+  function renderVariant(v, labels, key) {
     return el(
       "li",
       { class: "variant variant--" + v.status },
@@ -190,7 +208,7 @@
         el("span", { class: "status-label" }, labels[v.status])
       ),
       el("p", null, v.reason),
-      v.notes.length ? el("ul", { class: "check-notes" }, v.notes.map((n) => el("li", null, n))) : null
+      notesToggle(key + ":" + v.type, v.notes)
     );
   }
 
@@ -207,18 +225,18 @@
         el("span", { class: "status-label" }, labels[check.status])
       ),
       el("p", { class: "check-reason" }, check.reason),
-      check.variants && !check.variantsSame ? el("ul", { class: "variants" }, check.variants.map((v) => renderVariant(v, labels))) : null,
+      check.variants && !check.variantsSame ? el("ul", { class: "variants" }, check.variants.map((v) => renderVariant(v, labels, check.id))) : null,
       check.variantsSame
-        ? el(
-            "details",
-            { class: "help variants-details" },
-            el("summary", null, "Details for each vehicle type"),
-            el("ul", { class: "variants" }, check.variants.map((v) => renderVariant(v, labels)))
+        ? toggle(
+            "variants:" + check.id,
+            "help variants-details",
+            "Details for each vehicle type",
+            el("ul", { class: "variants" }, check.variants.map((v) => renderVariant(v, labels, check.id)))
           )
         : null,
       check.meter ? renderMeter(check.meter, check.status) : null,
-      check.notes.length ? el("ul", { class: "check-notes" }, check.notes.map((n) => el("li", null, n))) : null,
-      el("ul", { class: "cites", "aria-label": "Sources" }, rules.map(citation))
+      notesToggle(check.id, check.notes),
+      ruleLinks(rules)
     );
   }
 
@@ -289,7 +307,7 @@
 
   // ---------------------------------------------------------------- What can I tow?
   function citeList(ruleIds) {
-    return el("ul", { class: "cites", "aria-label": "Sources" }, Array.from(new Set(ruleIds)).map((id) => citation(R.get(id), true)));
+    return ruleLinks(ruleIds.map((id) => R.get(id)));
   }
 
   function limitLine(limit, category) {
@@ -370,7 +388,7 @@
       s.applies && !s.incomplete ? el("p", { class: "hint" }, "Based on your vehicle's GVM plus the trailer's plated GVM.") : null,
     ];
     if (s.eitherType) {
-      ids.push("reg292-general-speed", "def-vehicle-type-from-papers");
+      ids.push("reg292-general-speed");
       list = [
         el("p", { class: "tow-speed-group" }, "If registered as a goods vehicle:"),
         list,
@@ -460,7 +478,7 @@
         { class: "hint" },
         "Trailer brakes depend only on tare, so they never differ. Manufacturer ratings (payload, GCM, towing capacity) are the same for both; see Check my rig."
       ),
-      el("details", { class: "help compare-sources" }, el("summary", null, `Sources (${new Set(ids).size})`), citeList(ids))
+      citeList(ids)
     );
   }
 
@@ -584,7 +602,7 @@
   function fillHelp() {
     document.querySelectorAll("[data-rule-help]").forEach((box) => {
       const rule = R.get(box.dataset.ruleHelp);
-      box.querySelector(".help-body").replaceChildren(el("p", null, rule.summary), el("ul", { class: "cites" }, citation(rule)));
+      box.querySelector(".help-body").replaceChildren(el("p", null, rule.summary), ruleLinks([rule]));
     });
   }
 
@@ -595,7 +613,7 @@
       el(
         "ol",
         null,
-        why.points.map((pt) => el("li", null, pt.text, pt.ruleId ? el("ul", { class: "cites" }, citation(R.get(pt.ruleId))) : null))
+        why.points.map((pt) => el("li", null, pt.text, pt.ruleId ? ruleLinks([R.get(pt.ruleId)]) : null))
       ),
       el("p", { class: "example" }, el("strong", null, "Worked example: "), why.example.text),
       el("button", { type: "button", class: "button button--ghost", "data-load-example": "" }, "Load this example into the form")
@@ -606,7 +624,7 @@
       el("summary", null, myth.title),
       el("p", null, myth.summary),
       myth.notes.map((n) => el("p", null, n)),
-      el("ul", { class: "cites" }, citation(myth))
+      ruleLinks([myth])
     );
   }
 

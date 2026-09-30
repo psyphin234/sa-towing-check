@@ -529,7 +529,7 @@ select:focus {
   margin: 0 0 6px;
 }
 
-.help-body ul:not(.cites) {
+.help-body > ul {
   margin: 0 0 6px;
   padding-left: 1.2em;
 }
@@ -817,9 +817,12 @@ select:focus {
   flex-wrap: wrap;
 }
 
+/* the title wraps beside its icon (never leaving the icon alone); a long
+   status label drops to its own line only when both won't fit */
 .check-head h3 {
   font-size: 1.15rem;
-  flex: 1 1 auto;
+  flex: 1 1 9rem;
+  min-width: 0;
 }
 
 .status-label {
@@ -828,6 +831,7 @@ select:focus {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--tone);
+  text-align: right;
 }
 
 .check-reason {
@@ -843,6 +847,22 @@ select:focus {
 
 .check-notes li + li {
   margin-top: 2px;
+}
+
+/* a card's explanatory notes, folded away */
+.more-detail {
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+.more-detail > summary {
+  cursor: pointer;
+  width: fit-content;
+  color: var(--accent);
+}
+
+.more-detail > .check-notes {
+  margin-top: 4px;
 }
 
 /* one outcome per vehicle type, when the type was left blank */
@@ -878,6 +898,11 @@ select:focus {
   width: 20px;
   height: 20px;
   font-size: 0.75rem;
+}
+
+.variant-head strong {
+  flex: 1 1 9rem;
+  min-width: 0;
 }
 
 .variant-head .status-label {
@@ -1298,25 +1323,42 @@ select:focus {
   border: 1px solid var(--maker);
 }
 
-.cites {
-  list-style: none;
+/* compact citations on the checker: plain rule names linking to the sources page */
+.rule-links {
   margin: 10px 0 0;
-  padding: 0;
   font-size: 0.8rem;
+  line-height: 1.5;
   color: var(--text-muted);
 }
 
-.cite + .cite {
-  margin-top: 4px;
+.rule-links-label {
+  margin-right: 6px;
 }
 
-.cite a {
+.rule-links ul {
+  display: inline;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rule-links li {
+  display: inline;
+}
+
+.rule-links li + li::before {
+  content: "\00B7";
+  margin: 0 6px;
+  color: var(--text-muted);
+}
+
+.rule-links a {
   font-weight: 600;
-  overflow-wrap: anywhere;
 }
 
-.cite-source {
-  overflow-wrap: anywhere;
+.rule-ref {
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 .badge {
@@ -1480,15 +1522,6 @@ select:focus {
 .oq-rules {
   color: var(--text-muted);
   font-size: 0.875rem;
-}
-
-.badge-link {
-  text-decoration: none;
-}
-
-.badge-link:hover .badge,
-.badge-link:focus-visible .badge {
-  border-style: solid;
 }
 
 /* ------------------------------------------------------------ print */
@@ -1705,6 +1738,7 @@ select:focus {
   .results-actions,
   .explainers,
   .help,
+  .more-detail,
   .skip-link {
     display: none !important;
   }
@@ -1726,6 +1760,10 @@ select:focus {
   .print-only {
     display: block;
     margin-bottom: 14px;
+  }
+
+  .check-notes.print-only {
+    margin-bottom: 0;
   }
 
   .status-icon {

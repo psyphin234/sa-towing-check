@@ -507,7 +507,7 @@
       same
         ? `Same whichever way it's registered: ${SAME_OUTCOME_TEXT[goods.id](goods.data, goods.status)}.`
         : "Depends on how your vehicle is registered:",
-      Array.from(new Set(goods.ruleIds.concat(car.ruleIds, "def-vehicle-type-from-papers"))),
+      Array.from(new Set(goods.ruleIds.concat(car.ruleIds))),
       null,
       same ? goods.data : null
     );

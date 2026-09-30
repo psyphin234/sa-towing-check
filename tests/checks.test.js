@@ -617,7 +617,7 @@
     eq(speed.variants[1].status, "info");
     includes(speed.variants[1].reason, "General limits");
     eq(speed.status, "warn", "worst of the two");
-    if (speed.ruleIds.indexOf("def-vehicle-type-from-papers") === -1) throw new Error("cites the papers rule");
+    if (speed.ruleIds.indexOf("reg292-general-speed") === -1) throw new Error("cites both types' rules");
   });
   test("unsure: checks that agree give one outcome", () => {
     const lic = legalCard(caravanRig(), "licence");
@@ -657,6 +657,29 @@
     eq(t.speed.applies, true);
     eq(t.speed.eitherType, true);
     eq(MD.whatCanITow(unsure({ tareKg: 2100, gvmKg: 3100 })).licence.cls, "B");
+  });
+
+  // ------------------------------------------------------------ compact citations (ui.js)
+  const UI = window.TOWING_UI;
+  test("every legal rule and definition has a short regulation number", () => {
+    R.rules
+      .filter((r) => r.category === "legal" || r.category === "definition")
+      .forEach((r) => {
+        if (!UI.shortRef(r)) throw new Error(`${r.id}: no short reference from "${r.regulation}"`);
+      });
+    eq(UI.shortRef(R.get("reg99-licence-codes")), "reg 99");
+    eq(UI.shortRef(R.get("reg239-motor-car-exclusion")), "regs 236");
+    eq(UI.shortRef(R.get("def-tare")), "Act s1");
+    eq(UI.shortRef(R.get("maker-gcm")), null, "manufacturer limits aren't regulations");
+  });
+  test("rule links point at the sources page and keep the unverified badge", () => {
+    const box = UI.ruleLinks([R.get("reg99-licence-codes"), R.get("def-vehicle-type-from-papers"), R.get("reg99-licence-codes")]);
+    const links = box.querySelectorAll("a");
+    eq(links.length, 2, "duplicates removed");
+    eq(links[0].getAttribute("href"), "sources.html#reg99-licence-codes");
+    includes(links[0].textContent, "Driving licence code (reg 99)");
+    eq(box.querySelectorAll(".badge--unverified").length, 1, "only the unverified rule gets a badge");
+    eq(box.querySelectorAll(".badge--verified").length, 0, "verified badges live on the sources page");
   });
 
   // ------------------------------------------------------------ report
