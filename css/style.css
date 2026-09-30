@@ -156,10 +156,28 @@ h3 {
   outline-offset: 3px;
 }
 
-/* phones: the pill and the page links share one row, so drop the domain */
+/* phones: the pill, page links and shield share one row, so drop the domain,
+   keep the pill on one line and shorten it to "← PsyPhin tools" */
 @media (max-width: 480px) {
   .back-link-domain {
     display: none;
+  }
+
+  .back-link {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .back-link-more {
+    display: none;
+  }
+
+  .back-link {
+    padding: 7px 12px 7px 10px;
+    gap: 8px;
+    font-size: 14px;
   }
 }
 
@@ -173,6 +191,69 @@ h3 {
 .nav {
   display: flex;
   gap: 18px;
+}
+
+/* page links + PsyPhin shield (a copy of psyphin.co.za's brand-64.png), top right */
+.header-end {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand {
+  display: block;
+  flex: none;
+  border-radius: 6px;
+}
+
+.brand img {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .site-header-inner {
+    gap: 12px;
+  }
+
+  .header-end,
+  .nav {
+    gap: 12px;
+  }
+
+  .nav a {
+    font-size: 1rem;
+  }
+
+  .brand img {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 350px) {
+  .site-header-inner {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .site-header-inner,
+  .header-end,
+  .nav {
+    gap: 8px;
+  }
+
+  .back-link {
+    padding: 6px 10px 6px 8px;
+    gap: 6px;
+  }
 }
 
 .nav a {
