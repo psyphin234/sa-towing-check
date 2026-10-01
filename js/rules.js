@@ -95,6 +95,10 @@
       label: "Compulsory specification VC 8026 Ed. 5, caravans and light trailers (GN 97, Government Gazette 32916, 5 February 2010), archive.org copy",
       url: "https://archive.org/download/za.vc.8026.2004/za.vc.8026.2004.html",
     },
+    vc8026Draft2008: {
+      label: "Proposed compulsory specification for category O1/O2 vehicles, caravans and light trailers (GN R1395, Government Gazette 31735, 24 December 2008), gov.za: the draft for comment, same cl. 3.5.2 wording",
+      url: "https://www.gov.za/sites/default/files/gcis_document/201409/317351395.pdf",
+    },
     caravanSa: {
       label: "CaravanSA: Towing the line (states 25–100 kg as law, no clause cited)",
       url: "https://www.caravansa.co.za/towing-the-line/",
@@ -415,13 +419,14 @@
       regulation: "Compulsory specification VC 8026 Ed. 5, cl. 3.5.2 (GN 97 of 2010), applied by National Road Traffic Regulations, reg 216(1)",
       sourceUrl: SRC.vc8026.url,
       sourceLabel: SRC.vc8026.label,
-      moreSources: [src("regs2012"), src("caravanSa"), src("vc8065Forum")],
+      moreSources: [src("vc8026Draft2008"), src("regs2012"), src("caravanSa"), src("vc8065Forum")],
       ...UNVERIFIED,
-      lastChecked: "2026-09-30",
+      lastChecked: "2026-10-01",
       params: { minKg: 25, maxKg: 100, maxTrailerGvmKg: 3500 },
       notes: [
         "Not clearly a road traffic law: a grey area. The 25–100 kg is not in the National Road Traffic Regulations themselves. It is clause 3.5.2 of VC 8026, the compulsory specification for category O1/O2 trailers (caravans and light trailers), and its wording is aimed at the trailer's design: the maker must set a maximum and minimum within 25–100 kg.",
         "Reg 216(1) says a trailer operated on a public road \"shall comply with the relevant requirements\" of the compulsory specifications (those listed in Annex A to SABS 047), so a trailer loaded to more than 100 kg on the ball arguably doesn't comply. No regulation or court decision found says outright that towing with more than 100 kg on the ball is an offence.",
+        "The 2008 draft of this specification (GN R1395, on gov.za) has the same 25–100 kg wording in cl. 3.5.2. Its scope (cl. 1.1) is \"vehicle models\", and compliance is shown by homologating each model (cl. 7.1), which supports reading the limit as a design requirement on the trailer maker.",
         "Many South African sources (CaravanSA, forums, towing guides) state 25–100 kg as the law without citing a clause. Separately, VC 8065 makes SANS 1505 compulsory for ball couplings and towing brackets: that governs how they are made and rated, not what you load.",
         "Claims found online that reg 239 makes a towbar's rated load binding are wrong: reg 239 covers GVM, axle loads, GCM, power-to-mass and the driving axle, and applies to goods vehicles, not motor cars.",
         "Because of the possible legal consequences (a traffic officer could treat the rig as not roadworthy under section 44 of the Act), this checker recommends no more than 100 kg on the tow ball even when the vehicle or towbar is rated higher, and shows more as amber, not as not legal. Confirm with your DLTC.",
