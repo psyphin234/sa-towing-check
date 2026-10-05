@@ -1,6 +1,6 @@
 # SA Towing Check
 
-Static checker for South African towing legality (licence code, trailer brakes vs tare, speed limit, overloading, manufacturer ratings), part of the PsyPhin site. Repo `psyphin234/sa-towing-check` (public), GitHub Pages from `main` / root, live at **https://psyphin.co.za/sa-towing-check/** by inheritance from the psyphin.co.za user site (see its CLAUDE.md, "Other GitHub Pages repos"). Push to `main` to deploy; check with `gh api repos/psyphin234/sa-towing-check/pages/builds/latest`.
+Static checker for South African towing legality (licence code, trailer brakes vs tare, speed limit, overloading, manufacturer ratings), part of the PsyPhin site. Repo `psyphin234/sa-towing-check` (public), GitHub Pages from `main` / root, live at **https://towing.psyphin.co.za/** (custom domain since 2026-10-05: the `CNAME` file here plus an Afrihost `towing` CNAME record; see the psyphin.co.za CLAUDE.md). The old `psyphin.co.za/sa-towing-check/` address 301-redirects here. Push to `main` to deploy; check with `gh api repos/psyphin234/sa-towing-check/pages/builds/latest`.
 
 Plain HTML/CSS/vanilla JS. **No build step, no framework.** All calculations run in the browser; user inputs are never stored or sent anywhere.
 
@@ -78,7 +78,7 @@ One form, four modes (buttons above the form; the URL hash holds the mode: none 
 ## Site furniture
 
 - Favicons are a copy of psyphin.co.za's set; change both together. So is `brand-64.png`, the PsyPhin shield at the top right of both pages' headers (links to psyphin.co.za). On phones the header row is tight: under 420 px the pill drops "More" (`.back-link-more`) to read "← PsyPhin tools"; check 320–430 px after changing the header. `og-image.jpg` (1200x630) is a crop of the rig diagram, used by both pages' Open Graph tags.
-- GoatCounter (cookie-free page visits, shared dashboard https://psyphin.goatcounter.com/) is on index.html and sources.html, just before `</body>`. It never sees form inputs (they are never sent anywhere); the privacy line on the checker says visits are counted. Don't add it to tests/.
+- GoatCounter (cookie-free page visits, shared dashboard https://psyphin.goatcounter.com/) is on index.html and sources.html, just before `</body>`. The dashboard is shared with psyphin.co.za, so a `window.goatcounter.path` snippet prefixes paths with the host (`towing.psyphin.co.za/`); visits before 2026-10-05 are under `/sa-towing-check/`. It never sees form inputs (they are never sent anywhere); the privacy line on the checker says visits are counted. Don't add it to tests/.
 - The psyphin.co.za card (`projects.js` there, image `assets/img/projects/sa-towing-check.jpg`) is amber "In testing"; the owner decides when it goes green.
 
 ## Build status
