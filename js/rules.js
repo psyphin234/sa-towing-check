@@ -161,6 +161,8 @@
       ...UNVERIFIED,
       notes: [
         "The definitions depend on what a vehicle is \"designed or adapted\" for; how a particular double cab is registered is not settled by the regulation text. See Still to check.",
+        "Not from the regulation: the registration certificate's \"Vehicle category\" line states it. A goods vehicle up to 3 500 kg GVM shows \"Light load vehicle (GVM 3500Kg or less)\".",
+        "Not from the regulation: one example seen, a 2023 GWM P-Series double cab, is registered with vehicle category \"Light load vehicle (GVM 3500Kg or less)\" and description \"Pick-up / Bakkie\", so that double cab is a goods vehicle. One example doesn't show all double cabs are.",
       ],
     },
     {
@@ -595,7 +597,7 @@
   // What the regulation text doesn't settle, shown on sources.html. Remove an
   // entry once it is settled (and update the rules it names).
   const openQuestions = [
-    { text: "How are double cab bakkies registered: always as goods vehicles (LDVs), or can one be a motor car?", ruleIds: ["def-goods-vehicle", "def-vehicle-type-from-papers"] },
+    { text: "How are double cab bakkies registered: always as goods vehicles (LDVs), or can one be a motor car? One seen so far (a 2023 GWM P-Series) is registered as a light load vehicle.", ruleIds: ["def-goods-vehicle", "def-vehicle-type-from-papers"] },
     { text: "For a part-time 4x4 driven in 2WD, which axles count as driving axles under reg 239(3)?", ruleIds: ["reg239-driving-axle"] },
     { text: "With two trailers, does the 750 kg licence threshold apply to the sum of the trailer GVMs? Reg 99 speaks of \"a trailer\".", ruleIds: ["reg99-licence-codes"] },
     { text: "When towing, where must the 100 km/h (or 80 km/h) sign go: on the tow vehicle, or on the rear of the trailer where it can be seen?", ruleIds: ["reg293-speed-sign"] },
