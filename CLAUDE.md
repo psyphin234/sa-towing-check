@@ -77,7 +77,8 @@ One form, four modes (buttons above the form; the URL hash holds the mode: none 
 
 ## Site furniture
 
-- Favicons are a copy of psyphin.co.za's set; change both together. So is `brand-64.png`, the PsyPhin shield at the top right of both pages' headers (links to psyphin.co.za). On phones the header row is tight: under 420 px the pill drops "More" (`.back-link-more`) to read "← PsyPhin tools"; check 320–430 px after changing the header. `og-image.jpg` (1200x630) is a crop of the rig diagram, used by both pages' Open Graph tags.
+- Favicons are a copy of psyphin.co.za's set; change both together.
+- **Header** (since 2026-10-08): the same `.brand-bar` as fuel.psyphin.co.za and the tyre calculator: black band with a blue glow; a top row with the "← More PsyPhin tools" pill and the Checker/Sources links; then `logo.jpg` (a copy of the fuel site's `docs/assets/logo.jpg`, linking to psyphin.co.za), a blue eyebrow, the title (h1 on the checker, `.brand-title` on sources) and a one-line `.subtitle`. Keep the three sites' headers in step. Under 420 px the pill drops "More". The old `.site-header` CSS and `brand-64.png` are no longer used. Background: the same faint circuit-trace `body::before` as psyphin.co.za. `og-image.jpg` (1200x630) is a crop of the rig diagram, used by both pages' Open Graph tags.
 - GoatCounter (cookie-free page visits, shared dashboard https://psyphin.goatcounter.com/) is on index.html and sources.html, just before `</body>`. The dashboard is shared with psyphin.co.za, so a `window.goatcounter.path` snippet prefixes paths with the host (`towing.psyphin.co.za/`); visits before 2026-10-05 are under `/sa-towing-check/`. It never sees form inputs (they are never sent anywhere); the privacy line on the checker says visits are counted. Don't add it to tests/.
 - The psyphin.co.za card (`projects.js` there, image `assets/img/projects/sa-towing-check.jpg`) is green "Actively maintained" since 2026-10-08 (the owner's call).
 
