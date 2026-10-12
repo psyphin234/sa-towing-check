@@ -345,7 +345,7 @@
         .filter((cap) => cap !== null);
       return caps.length ? Math.min.apply(null, caps) : null;
     }
-    const basisKg = input.vehicleType === "motorCar" ? input.tareKg : input.gvmKg;
+    const basisKg = C.classedByTare(input.vehicleType) ? input.tareKg : input.gvmKg;
     if (!isNum(basisKg)) return null;
     const vehicleClass = basisKg <= p.lightVehicleMaxKg ? "B" : basisKg <= p.mediumVehicleMaxKg ? "C1" : "C";
     const held = p.includes[input.licenceCode] || [];

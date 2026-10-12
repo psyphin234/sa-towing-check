@@ -573,6 +573,43 @@
     eq(row(t, "service").legalMaxKg, 750);
     eq(row(t, "overrun").legal.find((l) => l.binding).ruleId, "reg99-licence-codes");
   });
+
+  // ------------------------------------------------------------ motor home
+  const motorHome = (o) => Object.assign({ vehicleType: "motorHome", licenceCode: "", trailers: [], trailerBrake: "" }, o);
+
+  test("motor home classed by tare: GVM over 3 500 kg, tare under, towing 1 500 kg needs EB", () => {
+    const c = C.licenceCheck(motorHome({ tareKg: 3200, gvmKg: 4500, trailers: trailer(1500), licenceCode: "EB" }));
+    eq(c.status, "pass");
+    includes(c.reason, "needs EB");
+    includes(c.reason, "motor home is classed by its tare");
+    if (!c.notes.some((n) => n.indexOf("names motor homes") !== -1)) throw new Error("missing motor home note");
+    if (c.ruleIds.indexOf("def-motor-home") === -1) throw new Error("missing motor home definition");
+  });
+  test("motor home without a trailer on code B: B covers it", () => {
+    eq(C.licenceCheck(motorHome({ tareKg: 3200, gvmKg: 4500, licenceCode: "B" })).status, "pass");
+  });
+  test("motor home with a tare over 3 500 kg needs C1", () => {
+    const c = C.licenceCheck(motorHome({ tareKg: 3600, gvmKg: 5000 }));
+    includes(c.reason, "need code C1.");
+    eq(c.notes.some((n) => n.indexOf("names motor homes") !== -1), false, "no B note when it needs C1");
+  });
+  test("motor home: no reg 293 towing limit, no reg 239 offences", () => {
+    const s = C.speedCheck(motorHome({ gvmKg: 4500, trailers: trailer(1500) }));
+    eq(s.status, "info");
+    includes(s.reason, "not to a motor home");
+    if (s.ruleIds.indexOf("def-motor-home") === -1) throw new Error("speed card should cite the motor home definition");
+    const o = C.overloadingCheck(motorHome({ tareKg: 3200, gvmKg: 4500, loadItems: items([2000, 1]) }));
+    eq(o.status, "info");
+    includes(o.reason, "not motor cars or motor homes");
+    eq(C.drivingAxleCheck(motorHome({ weighbridge: { rearAxleKg: 1000 } })), null);
+    eq(C.runLegalChecks(motorHome({ tareKg: 3200, gvmKg: 4500 })).checks.length, 4, "motor home: 4 legal cards");
+  });
+  test("tow: motor home with EB, classed by tare", () => {
+    const t = MD.whatCanITow(motorHome({ tareKg: 3200, gvmKg: 4500, licenceCode: "EB" }));
+    eq(t.licence.cls, "B");
+    eq(row(t, "overrun").legalMaxKg, 3200, "overrun = tare, no licence cap");
+    eq(t.speed.applies, false, "motor home: no reg 293 towing limit");
+  });
   test("tow: manufacturer limits from towing capacity and GCM room", () => {
     const t = MD.whatCanITow(
       bakkie({ tareKg: 2100, gvmKg: 3100, gcmKg: 5850, brakedCapacityKg: 3500, unbrakedCapacityKg: 750 })

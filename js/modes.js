@@ -35,7 +35,7 @@
     const classOf = (kgValue) => (kgValue <= p.lightVehicleMaxKg ? "B" : kgValue <= p.mediumVehicleMaxKg ? "C1" : "C");
     let cls;
     if (input.vehicleType) {
-      const basisKg = input.vehicleType === "motorCar" ? input.tareKg : input.gvmKg;
+      const basisKg = C.classedByTare(input.vehicleType) ? input.tareKg : input.gvmKg;
       if (!isNum(basisKg)) return null;
       cls = classOf(basisKg);
     } else {
@@ -57,7 +57,7 @@
     const p = R.get("reg293-goods-towing-speed").params;
     const general = R.get("reg292-general-speed").params;
     const eitherType = !input.vehicleType;
-    if (input.vehicleType === "motorCar") return { applies: false, general };
+    if (input.vehicleType && !C.isGoodsVehicle(input.vehicleType)) return { applies: false, general };
     if (!isNum(input.gvmKg)) return { applies: true, general, eitherType, incomplete: true };
     return {
       applies: true,

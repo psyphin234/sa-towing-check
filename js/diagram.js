@@ -56,6 +56,8 @@
     // side profiles facing left; x 30..400, ground at 250
     goodsVehicle: "M30 200 L30 158 L92 146 L132 100 L252 100 L262 146 L400 146 L400 200 Z",
     motorCar: "M30 200 L30 158 L84 146 L134 98 L366 98 L394 146 L400 200 Z",
+    // cab with a sleeping area over it, then the living box
+    motorHome: "M30 200 L30 158 L64 146 L90 112 L60 112 L66 86 L394 86 L400 94 L400 200 Z",
   };
 
   function svgFor(d) {

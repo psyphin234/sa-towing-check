@@ -564,7 +564,7 @@
     tow: "What can I tow?",
     compare: "Motor car vs goods vehicle",
   };
-  const VEHICLE_NAME = { motorCar: "Motor car", goodsVehicle: "Goods vehicle" };
+  const VEHICLE_NAME = { motorCar: "Motor car", goodsVehicle: "Goods vehicle", motorHome: "Motor home" };
   const DRIVE_NAME = { rwd: "2WD, rear-wheel drive", fwd: "2WD, front-wheel drive", "4wd": "4x4 / AWD" };
   const BRAKE_FITTED = { none: "None (parking brake only)", overrun: "Overrun brake", service: "Service brake (driver-operated)" };
 

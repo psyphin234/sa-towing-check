@@ -150,12 +150,27 @@
       notes: ["Not from the regulation: sedans and SUVs are normally registered as motor cars."],
     },
     {
+      id: "def-motor-home",
+      category: "definition",
+      title: "Motor home",
+      summary:
+        "An enclosed motor vehicle designed or adapted solely to live in, and self-propelled. A caravan is the towed kind: an enclosed vehicle designed or adapted solely to live in and drawn by another vehicle.",
+      regulation: "National Road Traffic Regulations, reg 1 (definition inserted by GN R404 of 2007)",
+      sourceUrl: SRC.regs2012.url,
+      sourceLabel: SRC.regs2012.label,
+      ...VERIFIED,
+      lastChecked: "2026-10-12",
+      notes: [
+        "Reg 99 names motor homes among the vehicles classed by tare (\"a motor vehicle, including a motor home\"), and the speed limits in reg 293 and the overloading offences in regs 236, 237 and 239 are for goods vehicles, minibuses, buses and the like, not motor homes. So in this checker a motor home gets the same legal results as a motor car.",
+      ],
+    },
+    {
       id: "def-vehicle-type-from-papers",
       category: "definition",
       title: "Vehicle type comes from the registration papers",
       summary:
-        "Whether your vehicle is a motor car or a goods vehicle is what its registration certificate / licence disc says, not its body shape. A double cab can be either: it carries up to five people and has a load bed, so check your papers.",
-      regulation: "National Road Traffic Regulations, reg 1 (definitions of goods vehicle and motor car)",
+        "Whether your vehicle is a motor car, a goods vehicle or a motor home is what its registration certificate / licence disc says, not its body shape. A double cab can be either of the first two: it carries up to five people and has a load bed, so check your papers.",
+      regulation: "National Road Traffic Regulations, reg 1 (definitions of goods vehicle, motor car and motor home)",
       sourceUrl: SRC.regs2012.url,
       sourceLabel: SRC.regs2012.label,
       ...UNVERIFIED,
@@ -163,6 +178,7 @@
         "The definitions depend on what a vehicle is \"designed or adapted\" for; how a particular double cab is registered is not settled by the regulation text. See Still to check.",
         "Not from the regulation: the registration certificate's \"Vehicle category\" line states it. A goods vehicle up to 3 500 kg GVM shows \"Light load vehicle (GVM 3500Kg or less)\".",
         "Not from the regulation: one example seen, a 2023 GWM P-Series double cab, is registered with vehicle category \"Light load vehicle (GVM 3500Kg or less)\" and description \"Pick-up / Bakkie\", so that double cab is a goods vehicle. One example doesn't show all double cabs are.",
+        "A motor home built on a truck or van chassis (an Iveco, say) is classed by its tare only if it's registered as a motor home. If its papers say goods vehicle, it's classed by its GVM. What a motor home's registration certificate shows hasn't been checked yet: see Still to check.",
       ],
     },
     {
@@ -221,14 +237,18 @@
       category: "legal",
       title: "Driving licence code",
       summary:
-        "A motor vehicle is classed by its tare; a minibus, midibus, bus or goods vehicle by its GVM. Up to 3 500 kg: code B with a trailer GVM up to 750 kg, EB with a heavier trailer. Over 3 500 kg up to 16 000 kg: C1, or EC1 with a trailer over 750 kg. Heavier: C or EC.",
+        "A motor vehicle (a motor car or a motor home, for example) is classed by its tare; a minibus, midibus, bus or goods vehicle by its GVM. Up to 3 500 kg: code B with a trailer GVM up to 750 kg, EB with a heavier trailer. Over 3 500 kg up to 16 000 kg: C1, or EC1 with a trailer over 750 kg. Heavier: C or EC.",
       regulation: "National Road Traffic Regulations, reg 99(4)(a) (as substituted by GN R53 of 2011 and GN R846 of 2014)",
       sourceUrl: SRC.regs2012.url,
       sourceLabel: SRC.regs2012.label,
       moreSources: [src("gnR846"), src("focus")],
       ...VERIFIED,
+      lastChecked: "2026-10-12",
       params: {
-        lightVehicleMaxKg: 3500, // B / EB drawing vehicle: tare (motor car) or GVM (other) up to this
+        // Vehicle types classed by tare ("a motor vehicle, including a motor home");
+        // a goods vehicle (and a minibus, midibus or bus) is classed by its GVM.
+        tareClassedTypes: ["motorCar", "motorHome"],
+        lightVehicleMaxKg: 3500, // B / EB drawing vehicle: tare (motor car, motor home) or GVM (goods vehicle) up to this
         mediumVehicleMaxKg: 16000, // C1 / EC1 drawing vehicle up to this
         lightTrailerMaxKg: 750, // trailer GVM above this needs an "E" code
         // Code needed for [vehicle class][heavy trailer?]
@@ -250,6 +270,7 @@
       },
       notes: [
         "With two trailers this tool uses the sum of the trailer GVMs for the 750 kg test; the regulation speaks of \"a trailer\". Confirm with your DLTC.",
+        "Code B names motor homes outright: a motor home is classed by its tare, so one with a GVM over 3 500 kg but a tare up to 3 500 kg needs only code B, or EB with a trailer over 750 kg.",
       ],
     },
     {
@@ -257,12 +278,13 @@
       category: "legal",
       title: "The EB \"3 500 kg GCM\" myth",
       summary:
-        "Code EB's \"gross combination mass of the truck-tractor does not exceed 3 500 kg\" applies only to articulated vehicles (truck-tractor plus semi-trailer). For a car or bakkie with a trailer, EB covers a tow vehicle with a tare (motor car) or GVM (goods vehicle) up to 3 500 kg and a trailer GVM over 750 kg, with no combined-mass limit in the licence code.",
+        "Code EB's \"gross combination mass of the truck-tractor does not exceed 3 500 kg\" applies only to articulated vehicles (truck-tractor plus semi-trailer). For a car or bakkie with a trailer, EB covers a tow vehicle with a tare (motor car or motor home) or GVM (goods vehicle) up to 3 500 kg and a trailer GVM over 750 kg, with no combined-mass limit in the licence code.",
       regulation: "National Road Traffic Regulations, reg 99(4)(a), code EB",
       sourceUrl: SRC.regs2012.url,
       sourceLabel: SRC.regs2012.label,
       moreSources: [src("gnR846"), src("findSchool")],
       ...VERIFIED,
+      lastChecked: "2026-10-12",
       notes: [
         "Example: a goods vehicle with a GVM over 3 500 kg (Super Duty class) needs C1 to drive and EC1 to tow more than 750 kg, even when its tare is under 3 500 kg.",
       ],
@@ -331,12 +353,13 @@
       category: "legal",
       title: "Speed limit for goods vehicles",
       summary:
-        "100 km/h for a goods vehicle with a GVM over 3 500 kg up to 9 000 kg, and for a goods vehicle drawing one or two trailers where the vehicle's GVM plus the trailers' GVMs is over 3 500 kg up to 9 000 kg. 80 km/h where the vehicle's GVM, or that sum, is over 9 000 kg. Goods vehicles only: a motor car (SUV) towing the same caravan keeps the general limits.",
+        "100 km/h for a goods vehicle with a GVM over 3 500 kg up to 9 000 kg, and for a goods vehicle drawing one or two trailers where the vehicle's GVM plus the trailers' GVMs is over 3 500 kg up to 9 000 kg. 80 km/h where the vehicle's GVM, or that sum, is over 9 000 kg. Goods vehicles only: a motor car (SUV) or a motor home towing the same trailer keeps the general limits.",
       regulation: "National Road Traffic Regulations, reg 293(1)(a)(i)–(ii) and 293(1)(b)(iv) (inserted by GN R1408 of 2016)",
       sourceUrl: SRC.gnR1408.url,
       sourceLabel: SRC.gnR1408.label,
       moreSources: [src("regs2012"), src("arriveSpeed")],
       ...VERIFIED,
+      lastChecked: "2026-10-12",
       params: {
         combinedGvmOverKg: 3500, // GVM (or sum of GVMs) above this: 100 km/h
         combinedGvmHeavyOverKg: 9000, // GVM (or sum of GVMs) above this: 80 km/h
@@ -383,15 +406,16 @@
     {
       id: "reg239-motor-car-exclusion",
       category: "legal",
-      title: "Motor cars and the overloading offences",
+      title: "Motor cars, motor homes and the overloading offences",
       summary:
-        "Reg 239(1), and the permissible-mass rules in regs 236 and 237, list minibuses, buses, tractors and goods vehicles, not motor cars. For an SUV, going over the GVM, axle ratings or GCM is shown as a manufacturer and insurance issue rather than these offences.",
+        "Reg 239(1), and the permissible-mass rules in regs 236 and 237, list minibuses, buses, tractors and goods vehicles, not motor cars or motor homes. For an SUV or a motor home, going over the GVM, axle ratings or GCM is shown as a manufacturer and insurance issue rather than these offences.",
       regulation: "National Road Traffic Regulations, regs 236, 237 and 239(1)",
       sourceUrl: SRC.regs2012.url,
       sourceLabel: SRC.regs2012.label,
       ...VERIFIED,
+      lastChecked: "2026-10-12",
       notes: [
-        "Tyre load limits (reg 238) apply to every motor vehicle, motor cars included: no wheel may carry more than its tyre is rated for.",
+        "Tyre load limits (reg 238) apply to every motor vehicle, motor cars and motor homes included: no wheel may carry more than its tyre is rated for.",
       ],
     },
     {
@@ -598,6 +622,7 @@
   // entry once it is settled (and update the rules it names).
   const openQuestions = [
     { text: "How are double cab bakkies registered: always as goods vehicles (LDVs), or can one be a motor car? One seen so far (a 2023 GWM P-Series) is registered as a light load vehicle.", ruleIds: ["def-goods-vehicle", "def-vehicle-type-from-papers"] },
+    { text: "What does a motor home's registration certificate show as \"Vehicle category\" and description? The regulations define a motor home, but how one appears on the papers hasn't been checked, nor whether a camper built on a goods vehicle chassis is re-registered as one.", ruleIds: ["def-motor-home", "def-vehicle-type-from-papers"] },
     { text: "For a part-time 4x4 driven in 2WD, which axles count as driving axles under reg 239(3)?", ruleIds: ["reg239-driving-axle"] },
     { text: "With two trailers, does the 750 kg licence threshold apply to the sum of the trailer GVMs? Reg 99 speaks of \"a trailer\".", ruleIds: ["reg99-licence-codes"] },
     { text: "When towing, where must the 100 km/h (or 80 km/h) sign go: on the tow vehicle, or on the rear of the trailer where it can be seen?", ruleIds: ["reg293-speed-sign"] },

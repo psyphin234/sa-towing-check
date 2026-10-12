@@ -16,7 +16,7 @@
  *
  * Input shape (masses in kg; null/undefined = not entered):
  *   {
- *     vehicleType: "motorCar" | "goodsVehicle" | "",
+ *     vehicleType: "motorCar" | "goodsVehicle" | "motorHome" | "",
  *     tareKg, gvmKg,
  *     licenceCode: "B" | "EB" | "C1" | "EC1" | "C" | "EC" | "",
  *     trailers: [{ gvmKg }],            // 0, 1 or 2 trailers
@@ -54,8 +54,23 @@
     return { count: trailers.length, sumKg, complete };
   }
 
+  const VEHICLE_TYPE_LABEL = { motorCar: "motor car", goodsVehicle: "goods vehicle", motorHome: "motor home" };
+  const VEHICLE_TYPE_DEF = { motorCar: "def-motor-car", goodsVehicle: "def-goods-vehicle", motorHome: "def-motor-home" };
+
   function vehicleTypeLabel(type) {
-    return type === "motorCar" ? "motor car" : "goods vehicle";
+    return VEHICLE_TYPE_LABEL[type] || VEHICLE_TYPE_LABEL.goodsVehicle;
+  }
+
+  // Reg 99 classes a motor vehicle (motor car, motor home) by its tare and a
+  // goods vehicle by its GVM.
+  function classedByTare(type) {
+    return R.get("reg99-licence-codes").params.tareClassedTypes.indexOf(type) !== -1;
+  }
+
+  // The reg 239 overloading offences and reg 293 speed limits are for goods
+  // vehicles (among others this tool doesn't cover), not motor cars or motor homes.
+  function isGoodsVehicle(type) {
+    return type === "goodsVehicle";
   }
 
   // data: optional machine-readable outcome (used for short summaries, e.g. the comparison table)
@@ -74,7 +89,7 @@
     if (!input.vehicleType) {
       return result("licence", title, "incomplete", "Choose the vehicle type from your registration papers.", ids);
     }
-    const byTare = input.vehicleType === "motorCar";
+    const byTare = classedByTare(input.vehicleType);
     const basisKg = byTare ? input.tareKg : input.gvmKg;
     const basisName = byTare ? "tare" : "GVM";
     if (!isNum(basisKg)) {
@@ -114,6 +129,10 @@
         `Goods vehicles are classed by GVM, not tare, so this vehicle needs ${required} even though its tare is under ${kg(p.lightVehicleMaxKg)}.`
       );
       ids.push("reg99-eb-articulated-myth");
+    }
+    if (input.vehicleType === "motorHome" && isNum(input.gvmKg) && input.gvmKg > p.lightVehicleMaxKg && vehicleClass === "B") {
+      notes.push(rule.notes[1]);
+      ids.push("def-motor-home");
     }
     if (p.outOfScopeCodes.indexOf(required) !== -1) {
       notes.push(`Code ${required} vehicles are outside what this tool checks in detail.`);
@@ -236,15 +255,15 @@
         "reg293-goods-towing-speed",
       ]);
     const noTowingLimit = { limitKmh: null, sign: false };
-    if (input.vehicleType === "motorCar") {
+    if (!isGoodsVehicle(input.vehicleType)) {
       if (t.count === 0)
         return result("speed", title, "info", `No trailer entered. ${generalText}`, ["reg292-general-speed"], null, noTowingLimit);
       return result(
         "speed",
         title,
         "info",
-        `The reg 293 towing limit applies to goods vehicles only, not to a motor car. ${generalText}`,
-        ["reg293-goods-towing-speed", "reg292-general-speed", "def-motor-car"],
+        `The reg 293 towing limit applies to goods vehicles only, not to a ${vehicleTypeLabel(input.vehicleType)}. ${generalText}`,
+        ["reg293-goods-towing-speed", "reg292-general-speed", VEHICLE_TYPE_DEF[input.vehicleType]],
         null,
         noTowingLimit
       );
@@ -351,12 +370,12 @@
     const ids = ["reg239-overloading"];
     if (!input.vehicleType)
       return result("overloading", title, "incomplete", "Choose the vehicle type from your registration papers.", ids);
-    if (input.vehicleType === "motorCar") {
+    if (!isGoodsVehicle(input.vehicleType)) {
       return result(
         "overloading",
         title,
         "info",
-        "Reg 239 lists goods vehicles, minibuses, buses and tractors, not motor cars, so its overloading offences (and the driving axle rule) do not apply to your vehicle. Its GVM, axle and GCM ratings still matter for safety and insurance: see Manufacturer limits.",
+        "Reg 239 lists goods vehicles, minibuses, buses and tractors, not motor cars or motor homes, so its overloading offences (and the driving axle rule) do not apply to your vehicle. Its GVM, axle and GCM ratings still matter for safety and insurance: see Manufacturer limits.",
         ids.concat("reg239-motor-car-exclusion"),
         [R.get("reg239-motor-car-exclusion").notes[0]]
       );
@@ -480,7 +499,7 @@
   const DRIVE_TEXT = { rwd: "rear axle", fwd: "front axle", "4wd": "front and rear axles" };
 
   function drivingAxleCheck(input) {
-    if (input.vehicleType !== "goodsVehicle") return null; // covered by the overloading card for motor cars
+    if (!isGoodsVehicle(input.vehicleType)) return null; // covered by the overloading card for motor cars and motor homes
     const p = R.get("reg239-driving-axle").params;
     const title = "Driving axle ratio";
     const ids = ["reg239-driving-axle"];
@@ -599,6 +618,9 @@
     maxTrailerByBrake,
     rigMasses,
     worstStatus,
+    classedByTare,
+    isGoodsVehicle,
+    vehicleTypeLabel,
     isNum,
     kg,
     MASS_SOURCE_TEXT,
