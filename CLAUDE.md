@@ -102,3 +102,7 @@ Still open: the questions in `openQuestions` (rules.js), and checking for amendm
 - Brand is written **PsyPhin**. Keep paths relative.
 - Commit identity: `74655215+psyphin234@users.noreply.github.com` (set globally on this PC). Never commit a personal email.
 - The repo is public: no personal names or private notes in committed files.
+
+## Search (SEO)
+
+Set up 2026-10-13, following the [Runbook: SEO for Small Sites & Tools](https://claude.ai/code/artifact/0e4d5503-7f20-4cb5-a25b-840f4caa3545). The `<title>` leads with the tool's name and adds the words people search for; the meta description is at most 155 characters (Google cuts the rest). `index.html` has a `WebApplication` JSON-LD block (keep its description the same as the meta description), and the footer's "More 4x4 tools" line links the tyres, winch and ropes tools, which link back. `robots.txt` and `sitemap.xml` are at the site root: **update the sitemap's `lastmod` when a page's content changes.** Indexable (no `noindex`).
