@@ -719,6 +719,33 @@
       myth.notes.map((n) => el("p", null, n)),
       ruleLinks([myth])
     );
+
+    // Common questions: the questions are in index.html; the answers come from rules.js.
+    const kg = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " kg";
+    const answer = (id, paragraphs, ruleIds) =>
+      document.querySelector(`#${id} .explainer-body`).replaceChildren(
+        ...paragraphs.map((t) => el("p", null, t)),
+        ruleLinks(ruleIds.map((r) => R.get(r)))
+      );
+    const lic = R.get("reg99-licence-codes").params;
+    answer("faq-licence", [
+      `Code B covers a trailer with a GVM up to ${kg(lic.lightTrailerMaxKg)}. A heavier trailer needs code EB, as long as the tow vehicle is up to ${kg(lic.lightVehicleMaxKg)}: its tare for a motor car or motor home, its GVM for a goods vehicle. A heavier tow vehicle needs C1, or EC1 with a trailer over ${kg(lic.lightTrailerMaxKg)}.`,
+      "The caravan's plated GVM counts, not what it weighs on the day.",
+    ], ["reg99-licence-codes", "reg151-plated-gvm"]);
+    answer("faq-brakes", [
+      R.get("reg151-trailer-brakes").summary,
+      "So a bakkie's factory towing rating doesn't decide it: a trailer on overrun brakes can't have a GVM above the bakkie's tare.",
+    ], ["reg151-trailer-brakes"]);
+    const goods = R.get("reg293-goods-towing-speed").params;
+    const general = R.get("reg292-general-speed").params;
+    answer("faq-speed", [
+      `For a goods vehicle (the registration papers say whether yours is one), ${goods.limitKmh} km/h when its GVM plus the trailer's GVM is over ${kg(goods.combinedGvmOverKg)}, and ${goods.heavyLimitKmh} km/h when that sum is over ${kg(goods.combinedGvmHeavyOverKg)}.`,
+      `A motor car (an SUV, say) or a motor home towing the same trailer keeps the general limits: ${general.urbanKmh} km/h in town, ${general.ruralKmh} km/h outside, ${general.freewayKmh} km/h on freeways, unless a sign says otherwise.`,
+    ], ["reg293-goods-towing-speed", "reg292-general-speed"]);
+    const ball = R.get("vc8026-towball-limit").params;
+    answer("faq-towball", [
+      `For a caravan or light trailer (GVM up to ${kg(ball.maxTrailerGvmKg)}), the compulsory specification VC 8026 sets ${ball.minKg}–${kg(ball.maxKg)} on the tow ball with the trailer loaded. Whether that binds you when towing is a grey area, so this checker recommends no more than ${kg(ball.maxKg)}, even when the towbar is rated higher, and never more than the vehicle or towbar maker's rating.`,
+    ], ["vc8026-towball-limit", "maker-towball-max"]);
   }
 
   // ---------------------------------------------------------------- simple-mode mirrors

@@ -1482,6 +1482,15 @@ select:focus {
   color: var(--accent);
 }
 
+.faq-title {
+  font-size: 1.3rem;
+  margin: 24px 0 12px;
+}
+
+.explainer-body p {
+  margin: 8px 0 0;
+}
+
 .explainer {
   border: 1px solid var(--border);
   background: var(--surface);
