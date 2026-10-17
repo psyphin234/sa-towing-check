@@ -105,6 +105,7 @@ Still open: the questions in `openQuestions` (rules.js), and checking for amendm
 ## Conventions
 
 - Brand is written **PsyPhin**. Keep paths relative.
+- **Entries are blue boxes with a pencil** (since 2026-10-17, the same as the EV travel cost page): every number field, dropdown and load list box has `--input-bg` / `--input-border`, a bold blue value and the `--pencil` icon; the chosen vehicle type is blue too. Worked-out figures stay plain. The disc drawings keep their pale paper but tint the two boxes blue (`--pencil-dark` on the light background). The intro's "Fill in the blue boxes" line is the key (`.key-input`).
 - Commit identity: `74655215+psyphin234@users.noreply.github.com` (set globally on this PC). Never commit a personal email.
 - The repo is public: no personal names or private notes in committed files.
 
