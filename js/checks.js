@@ -189,6 +189,36 @@
     };
   }
 
+  // Data for the brakes diagram: reg 151's zones for this tare (trailer GVM
+  // on one scale) and where the trailer sits. null until the tare is known.
+  function brakeChart(input) {
+    if (!isNum(input.tareKg)) return null;
+    const p = R.get("reg151-trailer-brakes").params;
+    const max = maxTrailerByBrake(input.tareKg);
+    const t = trailerSum(input);
+    const trailerKg = t.count && t.complete && t.sumKg > 0 ? t.sumKg : null;
+    const fitted = trailerKg !== null && input.trailerBrake ? input.trailerBrake : null;
+    const allowedKg = fitted ? max[fitted] : null; // null: a service brake has no reg 151 cap
+    const ratingKg = isNum(input.brakedCapacityKg) ? input.brakedCapacityKg : null;
+    const step = 500;
+    const top = Math.max(max.overrun, p.lightTrailerMaxKg, trailerKg || 0, ratingKg || 0);
+    const scaleKg = Math.ceil((top * 1.1) / step) * step;
+    return {
+      tareKg: input.tareKg,
+      noneMaxKg: max.none,
+      noneByHalfTare: max.none < p.lightTrailerMaxKg,
+      overrunMaxKg: max.overrun,
+      overrunByTare: max.overrun === input.tareKg,
+      trailerKg,
+      trailerCount: t.count,
+      fitted,
+      allowedKg,
+      overKg: allowedKg !== null && trailerKg > allowedKg ? trailerKg - allowedKg : 0,
+      ratingKg,
+      scaleKg,
+    };
+  }
+
   const BRAKE_TEXT = {
     none: "no brakes (parking brake only)",
     overrun: "an overrun or service brake",
@@ -616,6 +646,7 @@
     drivingAxleCheck,
     requiredBrake,
     maxTrailerByBrake,
+    brakeChart,
     rigMasses,
     worstStatus,
     classedByTare,

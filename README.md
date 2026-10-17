@@ -10,7 +10,7 @@ Is your car or bakkie plus trailer legal on South African roads? This static web
 
 Two more modes: **What can I tow?** (the heaviest trailer for each type of brakes, from your vehicle and licence code) and **Car vs bakkie** (how the rules change when the same vehicle is registered as a motor car or a goods vehicle).
 
-A diagram shows the mass on each axle and the tow ball, and **Print summary** gives a sheet for weighbridge day, with blanks for the readings.
+Results open with a scorecard: one tile per check, with the problems in red. Diagrams show which brakes your trailer needs for your vehicle's tare, where your payload and GCM go, and the mass on each axle and the tow ball. **Print summary** gives a sheet for weighbridge day, with blanks for the readings.
 
 Every legal rule links to the official regulation it comes from (checked against the gazetted National Road Traffic Regulations and Act, as amended), and the few points the regulations don't settle are marked as unverified. See [sources.html](sources.html).
 

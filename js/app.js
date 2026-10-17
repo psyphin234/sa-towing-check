@@ -36,7 +36,7 @@
   }
 
   const form = document.getElementById("rig-form");
-  const overallBox = document.getElementById("overall");
+  const budgetBody = document.getElementById("budget-body");
   const legalList = document.getElementById("legal-checks");
   const makerList = document.getElementById("maker-checks");
   const makerSummary = document.getElementById("maker-summary");
@@ -217,11 +217,15 @@
     );
   }
 
-  function renderCheck(check, labels) {
+  // opts.id: the card's id (scorecard tiles jump to it); opts.brakeChart: data
+  // for the brakes diagram; opts.noMeter: the weight budget already draws it.
+  function renderCheck(check, labels, opts) {
+    opts = opts || {};
     const rules = check.ruleIds.map((id) => R.get(id));
+    const chart = check.id === "brakes" && opts.brakeChart && opts.brakeChart.trailerCount ? opts.brakeChart : null;
     return el(
       "li",
-      { class: "check check--" + check.status },
+      { class: "check check--" + check.status, id: opts.id || null, tabindex: opts.id ? "-1" : null },
       el(
         "div",
         { class: "check-head" },
@@ -239,7 +243,8 @@
             el("ul", { class: "variants" }, check.variants.map((v) => renderVariant(v, labels, check.id)))
           )
         : null,
-      check.meter ? renderMeter(check.meter, check.status) : null,
+      chart ? window.TOWING_CHARTS.renderBrakeChart(chart, { fix: true }) : null,
+      check.meter && !opts.noMeter ? renderMeter(check.meter, check.status) : null,
       notesToggle(check.id, check.notes),
       ruleLinks(rules)
     );
@@ -309,6 +314,156 @@
       el("span", null, text)
     );
   }
+
+  // ---------------------------------------------------------------- scorecard
+  // The answer at a glance: a verdict, counts, and a tile per check in a fixed
+  // order (SA law, then manufacturer), each jumping to its card. On a phone the
+  // counts also ride in a bar at the bottom of the screen while the form is in view.
+  const VERDICT = {
+    pass: "No legal problems found",
+    info: "No legal problems found",
+    warn: "Legal, with conditions",
+    fail: "Not legal as entered",
+    incomplete: "More to fill in",
+  };
+  const VERDICT_SUB = {
+    warn: "See the amber items.",
+    fail: "See the red items.",
+    incomplete: "Some checks need more figures: see the grey tiles.",
+  };
+  const COUNT_TEXT = {
+    fail: (n) => (n > 1 ? `${n} problems` : "1 problem"),
+    warn: (n) => `${n} to watch`,
+    pass: (n) => `${n} OK`,
+    info: (n) => `${n} for information`,
+    incomplete: (n) => (n > 1 ? `${n} need input` : "1 needs input"),
+  };
+  const TILE_NAME = {
+    licence: "Licence code",
+    brakes: "Trailer brakes",
+    speed: "Speed limit",
+    "towball-legal": "Tow ball mass",
+    overloading: "Overloading",
+    "driving-axle": "Driving axle ratio",
+    payload: "Payload",
+    gcm: "GCM",
+    capacity: "Towing capacity",
+    towball: "Tow ball rating",
+    "trailer-gvm": "Trailer's own GVM",
+    axles: "Axle loads",
+  };
+  const REQUIRED_BRAKE = { none: "No brakes needed", overrun: "Overrun brakes", service: "Service brake" };
+
+  // A tile's headline figure, or null to show the status in its place.
+  function tileFigure(check, input, brakeChart) {
+    if (check.status === "incomplete") return null;
+    const d = check.data;
+    if (check.id === "licence" && d) return "Code " + d.required;
+    if (check.id === "brakes") {
+      if (brakeChart && brakeChart.overKg > 0) return C.kg(brakeChart.overKg) + " over";
+      return d ? REQUIRED_BRAKE[d.required] : null;
+    }
+    if (check.id === "speed" && d) return d.limitKmh ? `${d.limitKmh} km/h + sign` : "General limits";
+    if ((check.id === "towball-legal" || check.id === "towball") && C.isNum(input.towballKg)) return C.kg(input.towballKg);
+    if (check.meter) return Math.round((check.meter.value / check.meter.max) * 100) + " % used";
+    // these are "info" until there are weighbridge readings (or the trailer's actual mass)
+    if (check.status === "info" && (check.id === "driving-axle" || check.id === "axles")) return "Needs weighbridge";
+    if (check.status === "info" && check.id === "trailer-gvm") return "Weigh it";
+    return null;
+  }
+
+  function scoreCount(status, n, compact) {
+    return el(
+      "span",
+      { class: "score-count score-count--" + status },
+      el("span", { class: "status-icon", "aria-hidden": "true" }, STATUS_ICON[status]),
+      compact ? el("span", null, String(n), el("span", { class: "visually-hidden" }, " " + COUNT_TEXT[status](n).replace(/^\d+ /, ""))) : COUNT_TEXT[status](n)
+    );
+  }
+
+  function tile(check, labels, input, brakeChart, prefix) {
+    const figure = tileFigure(check, input, brakeChart);
+    const status = check.statusLabel || labels[check.status];
+    return el(
+      "a",
+      { class: "tile tile--" + check.status, href: "#" + prefix + check.id, "data-jump": prefix + check.id },
+      el("span", { class: "tile-name" }, el("span", { class: "status-icon", "aria-hidden": "true" }, STATUS_ICON[check.status]), TILE_NAME[check.id] || check.title),
+      el("span", { class: "tile-figure" }, figure || status),
+      check.meter && check.status !== "incomplete"
+        ? el("span", { class: "tile-meter", "aria-hidden": "true" }, el("span", { style: `width:${Math.min(check.meter.value / check.meter.max, 1) * 100}%` }))
+        : figure
+        ? el("span", { class: "status-label" }, status)
+        : null
+    );
+  }
+
+  const ORDER = ["fail", "warn", "pass", "info", "incomplete"];
+
+  function renderScorecard(input, legal, maker, brakeChart) {
+    const all = legal.checks.concat(maker.checks);
+    const counts = ORDER.map((s) => [s, all.filter((c) => c.status === s).length]).filter(([, n]) => n);
+    const sub = [VERDICT_SUB[legal.overall]];
+    if (legal.dependsOnType && legal.overall !== "incomplete")
+      sub.push("Some results depend on how your vehicle is registered: choose the vehicle type to narrow them down.");
+    if (maker.overall === "fail") sub.push("Over a manufacturer rating: see Manufacturer limits.");
+    else if (maker.overall === "warn") sub.push("Close to a manufacturer rating: see Manufacturer limits.");
+
+    document.getElementById("score-head").replaceChildren(
+      el(
+        "div",
+        { class: "score-verdict overall--" + legal.overall },
+        el("span", { class: "status-icon", "aria-hidden": "true" }, STATUS_ICON[legal.overall]),
+        el("p", null, VERDICT[legal.overall])
+      ),
+      sub.filter(Boolean).length ? el("p", { class: "score-sub" }, sub.filter(Boolean).join(" ")) : null,
+      el("p", { class: "score-counts" }, counts.map(([s, n]) => scoreCount(s, n)))
+    );
+    const group = (title, checks, labels, prefix) =>
+      checks.length
+        ? [el("h3", { class: "score-group" }, title), el("div", { class: "tiles" }, checks.map((c) => tile(c, labels, input, brakeChart, prefix)))]
+        : null;
+    document.getElementById("score-tiles").replaceChildren(
+      ...[].concat(
+        group("SA law", legal.checks, LEGAL_STATUS_LABEL, "law-") || [],
+        group("Manufacturer limits", maker.checks, STATUS_LABEL, "maker-") || []
+      )
+    );
+
+    const bar = document.getElementById("score-bar");
+    bar.className = "score-bar score-bar--" + legal.overall;
+    bar.replaceChildren(
+      el("span", { class: "score-bar-counts" }, counts.filter(([s]) => s !== "info" && s !== "incomplete").map(([s, n]) => scoreCount(s, n, true))),
+      el("button", { type: "button", class: "score-bar-button", "data-jump": "scorecard" }, "See results ↓")
+    );
+    scoreBarState.hasResults = counts.some(([s]) => s !== "incomplete");
+    updateScoreBar();
+  }
+
+  // Show the bar while the form is on screen and the scorecard isn't.
+  const scoreBarState = { formInView: false, cardInView: false, hasResults: false };
+  function updateScoreBar() {
+    const s = scoreBarState;
+    document.getElementById("score-bar").classList.toggle("is-shown", s.formInView && !s.cardInView && s.hasResults);
+  }
+  if ("IntersectionObserver" in window) {
+    const watch = (node, key) =>
+      new IntersectionObserver((entries) => {
+        scoreBarState[key] = entries[entries.length - 1].isIntersecting;
+        updateScoreBar();
+      }).observe(node);
+    watch(form, "formInView");
+    watch(document.getElementById("scorecard"), "cardInView");
+  }
+
+  // Tiles and the bar jump to a card without touching the URL hash (it holds the mode).
+  document.addEventListener("click", (e) => {
+    const link = e.target.closest("[data-jump]");
+    if (!link) return;
+    e.preventDefault();
+    const target = document.getElementById(link.dataset.jump);
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.focus({ preventScroll: true });
+  });
 
   // ---------------------------------------------------------------- What can I tow?
   function citeList(ruleIds) {
@@ -543,7 +698,7 @@
         el("span", null, OVERALL_TEXT[s.overall])
       ),
       tiles.length ? el("div", { class: "figures" }, tiles) : null,
-      el("ul", { class: "checks" }, s.checks.map((c) => renderCheck(c, LEGAL_STATUS_LABEL))),
+      el("ul", { class: "checks" }, s.checks.map((c) => renderCheck(c, LEGAL_STATUS_LABEL, { brakeChart: C.brakeChart(s.input) }))),
       el(
         "div",
         { class: "advanced-note" + (specific ? " advanced-note--flag" : "") },
@@ -670,24 +825,21 @@
     renderPrintSheet(mode === "simple" && simple.ready ? simple.input : input);
 
     const legal = C.runLegalChecks(input);
-    overallBox.className = "overall overall--" + legal.overall;
-    overallBox.replaceChildren(
-      el("span", { class: "status-icon", "aria-hidden": "true" }, STATUS_ICON[legal.overall]),
-      el(
-        "span",
-        null,
-        OVERALL_TEXT[legal.overall],
-        legal.dependsOnType && legal.overall !== "incomplete"
-          ? " Some results depend on how your vehicle is registered: choose the vehicle type to narrow them down."
-          : ""
-      )
-    );
-    legalList.replaceChildren(...legal.checks.map((c) => renderCheck(c, LEGAL_STATUS_LABEL)));
+    const brakeChart = C.brakeChart(input);
+    legalList.replaceChildren(...legal.checks.map((c) => renderCheck(c, LEGAL_STATUS_LABEL, { id: "law-" + c.id, brakeChart })));
 
     const maker = M.runMakerChecks(input);
+    const budget = M.weightBudget(input);
+    // the budget bars replace the payload and GCM cards' meters
+    const drawn = { payload: Boolean(budget && budget.vehicle), gcm: Boolean(budget && budget.combination) };
     renderMakerSummary(maker.checks);
-    makerList.replaceChildren(...maker.checks.map((c) => renderCheck(c, STATUS_LABEL)));
+    makerList.replaceChildren(...maker.checks.map((c) => renderCheck(c, STATUS_LABEL, { id: "maker-" + c.id, noMeter: drawn[c.id] })));
 
+    const status = (id) => (maker.checks.find((c) => c.id === id) || {}).status;
+    budgetBody.replaceChildren(...[].concat(window.TOWING_CHARTS.renderWeightBudget(budget, { payload: status("payload"), gcm: status("gcm") })));
+    window.TOWING_CHARTS.fitLabels(budgetBody);
+
+    renderScorecard(input, legal, maker, brakeChart);
     renderLimit(input);
   }
 
@@ -709,6 +861,14 @@
         why.points.map((pt) => el("li", null, pt.text, pt.ruleId ? ruleLinks([R.get(pt.ruleId)]) : null))
       ),
       el("p", { class: "example" }, el("strong", null, "Worked example: "), why.example.text),
+      ...window.TOWING_CHARTS.renderBrakeChart(
+        C.brakeChart({
+          tareKg: why.example.tareKg,
+          trailers: [{ gvmKg: why.example.trailerGvmKg }],
+          trailerBrake: "overrun",
+          brakedCapacityKg: why.example.factoryRatingKg,
+        })
+      ),
       el("button", { type: "button", class: "button button--ghost", "data-load-example": "" }, "Load this example into the form")
     );
 
@@ -817,6 +977,13 @@
       render();
       document.querySelector(".modes").scrollIntoView({ behavior: "smooth", block: "start" });
     }
+  });
+
+  // the bars' labels are fitted to their width
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => window.TOWING_CHARTS.fitLabels(budgetBody), 150);
   });
 
   document.querySelectorAll("[data-print]").forEach((b) =>

@@ -474,6 +474,55 @@
     };
   }
 
+  // ------------------------------------------------------------------ weight budget
+  // Data for the "Where your weight goes" bars, from the same mass model as
+  // the checks: the vehicle against its GVM, the payload item by item, and the
+  // whole rig against the GCM. Each bar is { limitKg, parts: [{ kind, label, kg }] }
+  // with kind tare | load | towball | trailer | weighed; null when it can't be drawn.
+  // The tow ball is the trailer's mass carried by the vehicle: it's in the
+  // vehicle and payload bars, and in the GCM bar once, at the trailer's end.
+  function weightBudget(input) {
+    const m = rigMasses(input);
+    if (!m.vehicle) return null;
+    const tb = m.trailerCount && m.towballKg ? m.towballKg : 0;
+    const estimate = m.vehicle.source === "estimate";
+    const part = (kind, label, kgValue) => ({ kind, label, kg: kgValue });
+    const towball = tb ? [part("towball", "Tow ball", tb)] : [];
+    const own = estimate
+      ? [part("tare", "Tare", input.tareKg)].concat(m.itemsKg ? [part("load", "Load", m.itemsKg)] : [])
+      : [part("weighed", "Vehicle, weighed", m.vehicle.kg - tb)];
+    const items = (input.loadItems || [])
+      .filter((it) => Number(it.kg) > 0 && Number(it.qty) > 0)
+      .map((it) => Object.assign(part("load", it.label || "Item", it.kg * it.qty), { qty: it.qty, eachKg: it.kg }));
+
+    const vehicle = isNum(input.gvmKg) ? { limitKg: input.gvmKg, parts: own.concat(towball) } : null;
+    const payload =
+      estimate && isNum(input.gvmKg) && input.gvmKg > input.tareKg && (items.length || tb)
+        ? { limitKg: input.gvmKg - input.tareKg, parts: items.concat(towball) }
+        : null;
+    const combination =
+      isNum(input.gcmKg) && (m.trailerCount === 0 || m.trailer)
+        ? {
+            limitKg: input.gcmKg,
+            parts: own.concat(
+              towball,
+              // the rest of the trailer; fullKg includes the tow ball, for labels
+              m.trailer ? [Object.assign(part("trailer", "Trailer", Math.max(m.trailer.kg - tb, 0)), { fullKg: m.trailer.kg })] : []
+            ),
+          }
+        : null;
+    return {
+      vehicleSource: m.vehicle.source,
+      trailerSource: m.trailer ? m.trailer.source : null,
+      trailerKg: m.trailer ? m.trailer.kg : null,
+      trailerCount: m.trailerCount,
+      towballKg: tb,
+      vehicle,
+      payload,
+      combination,
+    };
+  }
+
   function runMakerChecks(input) {
     const checks = [
       payloadCheck(input),
@@ -490,6 +539,7 @@
     runMakerChecks,
     trailerLimit,
     rigDiagram,
+    weightBudget,
     payloadCheck,
     gcmCheck,
     towingCapacityCheck,

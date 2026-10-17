@@ -20,6 +20,19 @@
   --legal: #3fb6ff;
   --maker: #c084fc;
 
+  /* charts (brakes diagram, weight budget). Checked for colour-blind
+     separation and contrast on --surface-2 with the dataviz palette validator:
+     blue = what you carry, aqua = the trailer (hatched for its tow ball),
+     grey = the vehicle itself; the brake zones are one blue, light = more brake. */
+  --seg-tare: #4a535d;
+  --seg-load: #3987e5;
+  --seg-trailer: #199e70;
+  --zone-none: #184f95;
+  --zone-overrun: #2a78d6;
+  --zone-service: #6da7ec;
+  --on-dark: #f4f6f8;
+  --on-light: #0b0d10;
+
   /* the on-screen licence disc: pale paper and dark print, like the real one */
   --disc-paper: #f1efe6;
   --disc-ring: #b9c7b0;
@@ -2238,5 +2251,748 @@ select:focus {
   .brand-bar,
   body::before {
     display: none;
+  }
+}
+
+/* ------------------------------------------------------------ scorecard (check mode) */
+.scorecard {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 14px 16px 16px;
+  margin-bottom: 16px;
+  scroll-margin-top: 16px;
+}
+
+.scorecard:focus {
+  outline: none;
+}
+
+.score-verdict {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.score-verdict .status-icon {
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+}
+
+.score-verdict p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.score-sub {
+  margin: 6px 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.score-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+.score-count {
+  --tone: var(--incomplete);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  padding: 3px 10px 3px 4px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.score-count .status-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+}
+
+.score-count--pass { --tone: var(--pass); }
+.score-count--warn { --tone: var(--warn); }
+.score-count--fail { --tone: var(--fail); }
+.score-count--info { --tone: var(--info); }
+
+.score-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 8px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.score-group::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  --tone: var(--incomplete);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--tone);
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.tile:hover,
+.tile:focus-visible {
+  border-color: var(--tone);
+  transform: translateY(-1px);
+}
+
+.tile--pass { --tone: var(--pass); }
+.tile--warn { --tone: var(--warn); }
+.tile--info { --tone: var(--info); }
+
+.tile--fail {
+  --tone: var(--fail);
+  background: color-mix(in srgb, var(--fail) 9%, var(--surface-2));
+}
+
+.tile-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+
+.tile-name .status-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+}
+
+.tile-figure {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.tile .status-label {
+  text-align: left;
+  font-size: 0.68rem;
+}
+
+.tile-meter {
+  height: 5px;
+  margin-top: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--tone) 22%, var(--surface));
+  overflow: hidden;
+}
+
+.tile-meter span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--tone);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile {
+    transition: none;
+  }
+
+  .tile:hover,
+  .tile:focus-visible {
+    transform: none;
+  }
+}
+
+/* a card a tile jumped to */
+.check {
+  scroll-margin-top: 16px;
+}
+
+.check:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* phones: the counts ride along while the form is in view (app.js sets is-shown) */
+.score-bar {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .score-bar.is-shown {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #0b0d10;
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--tone, var(--incomplete));
+    border-radius: 12px;
+    box-shadow: 0 6px 24px #000;
+  }
+
+  .score-bar--pass,
+  .score-bar--info { --tone: var(--pass); }
+  .score-bar--warn { --tone: var(--warn); }
+  .score-bar--fail { --tone: var(--fail); }
+
+  .score-bar-counts {
+    display: flex;
+    gap: 6px;
+  }
+
+  .score-bar .score-count {
+    padding: 2px 8px 2px 3px;
+  }
+}
+
+.score-bar-button {
+  margin-left: auto;
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------ brakes diagram */
+.brake-fig {
+  margin: 12px 0 0;
+}
+
+.brake-fig figcaption {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.brake-plot {
+  position: relative;
+  margin-top: 6px;
+  padding-bottom: 72px; /* two rows of tick labels */
+}
+
+.brake-plot.has-pin {
+  padding-top: 40px;
+}
+
+.brake-zones {
+  position: relative;
+  height: 48px;
+}
+
+.brake-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--on-dark);
+}
+
+.brake-zone--none {
+  background: var(--zone-none);
+  border-radius: 4px 0 0 4px;
+}
+
+.brake-zone--overrun {
+  background: var(--zone-overrun);
+}
+
+/* open-ended: an arrow tip on the right */
+.brake-zone--service {
+  justify-content: flex-end;
+  padding-right: 16px;
+  text-align: right;
+  background: var(--zone-service);
+  color: var(--on-light);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%);
+}
+
+/* labels sit above the red "over" band, on their zone's own colour */
+.brake-zone span {
+  position: relative;
+  z-index: 1;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: inherit;
+}
+
+.brake-zone.is-narrow span {
+  display: none;
+}
+
+/* the part of the trailer's GVM over the limit for its brakes */
+.brake-over {
+  position: absolute;
+  bottom: 72px;
+  height: 48px;
+  border: 2px solid var(--fail);
+  border-radius: 3px;
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--fail) 35%, transparent) 0 2px, transparent 2px 8px);
+}
+
+.brake-pin {
+  --tone: var(--text-muted);
+  position: absolute;
+  top: 26px;
+  bottom: 120px; /* stops at the top of the bar: the red band's edge marks the spot */
+  width: 0;
+  margin-left: -1px;
+  border-left: 2px solid var(--text);
+}
+
+.brake-pin::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: -7px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--tone);
+  border: 2px solid var(--surface-2);
+}
+
+.brake-pin--fail { --tone: var(--fail); }
+.brake-pin--pass { --tone: var(--pass); }
+
+.brake-pin-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--tone);
+  border-radius: 8px;
+}
+
+.brake-pin-label--right {
+  left: auto;
+  right: 0;
+}
+
+.brake-pin-label .status-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 0.65rem;
+}
+
+.brake-ticks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 72px;
+}
+
+.brake-tick {
+  position: absolute;
+  top: 0;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  color: var(--text-muted);
+}
+
+.brake-tick::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  height: 10px;
+  border-left: 1px solid var(--text-muted);
+}
+
+.brake-tick span {
+  position: absolute;
+  top: 9px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.brake-tick--row2 span {
+  top: 41px;
+}
+
+.brake-tick--row2::before {
+  height: 42px;
+}
+
+.brake-tick--start span {
+  transform: none;
+  text-align: left;
+}
+
+.brake-tick--end span {
+  transform: translateX(-100%);
+  text-align: right;
+}
+
+.brake-tick--strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.brake-tick--strong::before {
+  top: -52px;
+  height: 58px;
+  border-left: 2px dashed var(--text);
+}
+
+.brake-tick--maker {
+  color: var(--maker);
+}
+
+.brake-tick--maker::before {
+  top: -52px;
+  height: 58px;
+  border-left: 2px dotted var(--maker);
+}
+
+.brake-tick--row2.brake-tick--strong::before,
+.brake-tick--row2.brake-tick--maker::before {
+  height: 90px;
+}
+
+.brake-fix {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.brake-fix ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+@media (max-width: 480px) {
+  .brake-zone {
+    padding: 0 5px;
+    font-size: 0.7rem;
+  }
+
+  .brake-pin-label {
+    font-size: 0.75rem;
+  }
+}
+
+/* ------------------------------------------------------------ weight budget */
+.budget {
+  margin-top: 14px;
+}
+
+.budget + .budget {
+  margin-top: 22px;
+}
+
+.budget-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-bottom: 6px;
+}
+
+.budget-head h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.budget-head--sub h3 {
+  font-size: 1rem;
+}
+
+.budget-figure {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-chip {
+  --tone: var(--incomplete);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tone);
+}
+
+.budget-chip .status-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+}
+
+.budget-chip--pass { --tone: var(--pass); }
+.budget-chip--warn { --tone: var(--warn); }
+.budget-chip--fail { --tone: var(--fail); }
+
+.budget-stack {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 34px;
+}
+
+.budget-block {
+  flex: 0 1 0;
+  min-width: 3px;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: default;
+}
+
+.budget-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.budget-block:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.budget-block:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.budget-block:hover:not(.budget-block--left) {
+  filter: brightness(1.12);
+}
+
+.budget-block--tare,
+.budget-block--weighed {
+  background: var(--seg-tare);
+  color: var(--on-dark);
+}
+
+.budget-block--load {
+  background: var(--seg-load);
+  color: var(--on-light);
+}
+
+.budget-block--trailer {
+  background: var(--seg-trailer);
+  color: var(--on-light);
+}
+
+/* the tow ball: the trailer's colour, hatched, because it rides on the vehicle */
+.budget-block--towball,
+.budget-swatch--towball {
+  background: repeating-linear-gradient(135deg, var(--seg-trailer) 0 4px, color-mix(in srgb, var(--seg-trailer) 35%, var(--surface)) 4px 8px);
+  color: var(--on-dark);
+}
+
+.budget-block--left {
+  border: 1.5px dashed var(--border);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* over the limit: a marker where the limit falls, named under the bar */
+.budget-stack.has-limit {
+  margin-bottom: 18px;
+}
+
+.budget-limit {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  border-left: 2px solid var(--fail);
+}
+
+/* label on the inside of the line: the marker is always near the bar's right end */
+.budget-limit span {
+  position: absolute;
+  top: 100%;
+  right: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--fail);
+}
+
+.budget-zoom {
+  display: block;
+  width: 100%;
+  height: 24px;
+}
+
+.budget-zoom polygon {
+  fill: color-mix(in srgb, var(--seg-load) 12%, transparent);
+  stroke: var(--border);
+}
+
+.budget-legend {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.budget-legend th,
+.budget-legend td {
+  padding: 2px 0;
+  font-weight: 400;
+  text-align: left;
+}
+
+.budget-legend td:first-child {
+  width: 22px;
+}
+
+.budget-legend .num {
+  padding-left: 10px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-legend-total th,
+.budget-legend-total td {
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.budget-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  vertical-align: -1px;
+}
+
+.budget-swatch--tare { background: var(--seg-tare); }
+.budget-swatch--load { background: var(--seg-load); }
+.budget-swatch--trailer { background: var(--seg-trailer); }
+.budget-swatch--left { border: 1.5px dashed var(--text-muted); }
+
+.budget-note {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.budget-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.budget-key li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* hover / tap tooltip for chart blocks (charts.js) */
+.chart-tip {
+  position: fixed;
+  z-index: 50;
+  max-width: 260px;
+  padding: 6px 9px;
+  pointer-events: none;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--text);
+  background: #0b0d10;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+}
+
+.chart-tip strong,
+.chart-tip span {
+  display: block;
+}
+
+.chart-tip span {
+  color: var(--text-muted);
+}
+
+@media print {
+  .score-bar,
+  .chart-tip {
+    display: none !important;
+  }
+
+  .scorecard,
+  .brake-fig,
+  .budget {
+    break-inside: avoid;
+  }
+
+  .tile {
+    transform: none;
+  }
+
+  /* labels were fitted to the screen's width; the legend has every figure */
+  .budget-label {
+    text-overflow: ellipsis;
   }
 }

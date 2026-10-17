@@ -357,13 +357,22 @@
           <div id="simple-body" aria-live="polite"></div>
         </section>
 
-        <div id="overall" class="overall" role="status" aria-live="polite" data-modes="check"></div>
+        <section id="scorecard" class="scorecard" aria-labelledby="score-title" tabindex="-1" data-modes="check">
+          <h2 id="score-title" class="visually-hidden">Your results at a glance</h2>
+          <div id="score-head" role="status" aria-live="polite"></div>
+          <div id="score-tiles"></div>
+        </section>
 
         <section id="trailer-limit" class="limit-tile" aria-labelledby="limit-title" data-modes="check"></section>
 
         <section class="panel panel--rig" aria-labelledby="rig-title" data-modes="check">
           <h2 id="rig-title">Your rig at a glance</h2>
           <div id="rig-body"></div>
+        </section>
+
+        <section class="panel panel--budget" aria-labelledby="budget-title" data-modes="check">
+          <h2 id="budget-title">Where your weight goes</h2>
+          <div id="budget-body"></div>
         </section>
 
         <section class="panel panel--legal" aria-labelledby="legal-title" data-modes="check">
@@ -423,6 +432,9 @@
         </section>
       </section>
     </div>
+
+    <!-- phones: the scorecard's counts, pinned to the bottom while the form is in view -->
+    <div id="score-bar" class="score-bar" data-modes="check"></div>
   </main>
 
   <footer class="site-footer">
@@ -439,6 +451,7 @@
   <script src="js/modes.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/diagram.js"></script>
+  <script src="js/charts.js"></script>
   <script src="js/app.js"></script>
 
   <!-- GoatCounter: cookie-free page-visit stats at https://psyphin.goatcounter.com/ (never sees form inputs) -->

@@ -106,6 +106,36 @@
     eq(C.maxTrailerByBrake(1200).none, 600, "half tare");
     eq(C.maxTrailerByBrake(4000).overrun, 3500, "3 500 kg cap");
   });
+  test("brake chart: worked example is 400 kg over the overrun limit", () => {
+    const b = C.brakeChart(bakkie({ tareKg: 2100, trailers: trailer(2500), trailerBrake: "overrun", brakedCapacityKg: 3500 }));
+    eq(b.noneMaxKg, 750, "no-brake limit");
+    eq(b.noneByHalfTare, false);
+    eq(b.overrunMaxKg, 2100, "overrun limit");
+    eq(b.overrunByTare, true);
+    eq(b.allowedKg, 2100, "allowed with overrun brakes");
+    eq(b.overKg, 400, "over");
+    eq(b.ratingKg, 3500, "factory rating");
+    eq(b.scaleKg, 4000, "scale");
+  });
+  test("brake chart: agrees with the brake check, and needs only the tare", () => {
+    eq(C.brakeChart(bakkie({})), null, "no tare");
+    const zones = C.brakeChart(bakkie({ tareKg: 1200 }));
+    eq(zones.noneMaxKg, 600, "half tare");
+    eq(zones.noneByHalfTare, true);
+    eq(zones.trailerKg, null, "no trailer pin");
+    eq(zones.overKg, 0);
+    [
+      [700, 1300, "none"],
+      [2100, 2100, "overrun"],
+      [2101, 2100, "overrun"],
+      [3600, 4000, "overrun"],
+      [3000, 2100, "service"],
+    ].forEach(([gvm, tare, brake]) => {
+      const input = bakkie({ tareKg: tare, trailers: trailer(gvm), trailerBrake: brake });
+      eq(C.brakeChart(input).overKg > 0, C.brakeCheck(input).status === "fail", `${gvm} behind ${tare} with ${brake}`);
+    });
+    eq(C.brakeChart(bakkie({ tareKg: 4000 })).overrunByTare, false, "3 500 kg cap, not the tare");
+  });
 
   // ------------------------------------------------------------ brake check
   test("SPEC worked example: tare 2100, 2500 kg overrun caravan is not legal", () => {
@@ -375,6 +405,32 @@
     includes(c.reason, "Using 515 kg of your 1 000 kg payload (52 %)");
     eq(c.meter.value, 515);
     eq(c.meter.max, 1000);
+  });
+  const total = (bar) => bar.parts.reduce((s, p) => s + p.kg, 0);
+  test("weight budget: bars add up to the same masses as the checks", () => {
+    const input = exampleRig();
+    const b = M.weightBudget(input);
+    eq(b.vehicle.limitKg, 3100, "GVM");
+    eq(total(b.vehicle), C.rigMasses(input).vehicle.kg, "vehicle bar");
+    eq(b.vehicle.parts.map((p) => p.kind).join(), "tare,load,towball");
+    eq(b.payload.limitKg, 1000, "payload");
+    eq(total(b.payload), M.payloadCheck(input).meter.value, "payload bar");
+    eq(b.payload.parts.length, 5, "four items and the tow ball");
+    eq(b.combination.limitKg, 5850, "GCM");
+    eq(total(b.combination), M.gcmCheck(input).meter.value, "GCM bar counts the tow ball once");
+    eq(b.combination.parts.map((p) => p.kind).join(), "tare,load,towball,trailer");
+  });
+  test("weight budget: weighbridge readings, and what can't be drawn", () => {
+    const input = exampleRig({ weighbridge: { frontAxleKg: 1300, rearAxleKg: 1500, trailerAxlesKg: 2300 } });
+    const b = M.weightBudget(input);
+    eq(b.vehicle.parts.map((p) => p.kind).join(), "weighed,towball");
+    eq(total(b.vehicle), 2800, "vehicle weighed");
+    eq(b.payload, null, "no item breakdown when weighed");
+    eq(total(b.combination), C.rigMasses(input).combined.kg, "GCM bar");
+    eq(M.weightBudget(bakkie({ gvmKg: 3100 })), null, "no tare");
+    const bare = M.weightBudget(bakkie({ tareKg: 2100, gvmKg: 3100 }));
+    eq(bare.payload, null, "nothing loaded");
+    eq(bare.combination, null, "no GCM");
   });
   test("payload: within 5 % of the limit is amber, over is red", () => {
     eq(M.payloadCheck(exampleRig({ loadItems: items([760, 1]) })).status, "warn");
