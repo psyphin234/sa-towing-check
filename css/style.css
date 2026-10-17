@@ -703,7 +703,7 @@ select:focus {
 .load-list {
   display: grid;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-top: 10px;
 }
 
 .load-row {
@@ -2558,6 +2558,7 @@ select:focus {
 
 .brake-plot {
   position: relative;
+  container-type: inline-size; /* 100cqw = the plot's width, for the pin label */
   margin-top: 6px;
   padding-bottom: 72px; /* two rows of tick labels */
 }
@@ -2652,10 +2653,12 @@ select:focus {
 .brake-pin--fail { --tone: var(--fail); }
 .brake-pin--pass { --tone: var(--pass); }
 
+/* centred over the pin, but kept inside the plot: --pos is the pin's place (0–1) */
 .brake-pin-label {
   position: absolute;
   top: 0;
   left: 0;
+  transform: translateX(clamp(0px, calc(var(--pos) * 100cqw - 50%), calc(100cqw - 100%)));
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2665,11 +2668,6 @@ select:focus {
   background: var(--surface);
   border: 1px solid var(--tone);
   border-radius: 8px;
-}
-
-.brake-pin-label--right {
-  left: auto;
-  right: 0;
 }
 
 .brake-pin-label .status-icon {

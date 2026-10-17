@@ -133,7 +133,7 @@
         el("div", { class: "brake-pin brake-pin--" + status, style: "left:" + pct(b.trailerKg, scale) }),
         el(
           "span",
-          { class: "brake-pin-label brake-pin--" + status + (pos > 0.5 ? " brake-pin-label--right" : "") },
+          { class: "brake-pin-label brake-pin--" + status, style: "--pos:" + Math.min(pos, 1).toFixed(4) },
           status === "fail" || status === "pass" ? el("span", { class: "status-icon", "aria-hidden": "true" }, status === "fail" ? "✕" : "✓") : null,
           b.fitted ? `${what}, ${FITTED[b.fitted]}` : what
         ),
