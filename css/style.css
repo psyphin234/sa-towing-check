@@ -1,31 +1,36 @@
-/* SA Towing Check. Colours follow psyphin.co.za (css/style.css there). */
+/* SA Towing Check. Colours follow psyphin.co.za (css/style.css there): the navy
+   "deep space" look shared by every PsyPhin site since 2026-10-18. */
 :root {
-  --bg: #020203;
-  --surface: #111418;
-  --surface-2: #181c21;
-  --border: #262c33;
-  --text: #e6ebef;
-  --text-muted: #9aa4ae;
-  --accent: #3fb6ff;
-  --accent-strong: #1e8fff;
+  --bg: #040817;
+  --surface: #0b1330;
+  --surface-2: #101a3c;
+  --glass: rgba(11, 19, 48, 0.58);
+  --glass-2: rgba(16, 26, 60, 0.6);
+  --border: rgba(120, 170, 255, 0.16);
+  --text: #eaf2ff;
+  --text-muted: #a8b7d6;
+  --accent: #4cc9ff;
+  --accent-strong: #2f6bff;
+  --accent-glow: rgba(76, 201, 255, 0.35);
+  --violet: #7c5cff;
 
   /* anything the visitor can change: blue box, blue value, pencil (worked-out
      figures stay plain). The same as the EV travel cost page. */
   --input-bg: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
   --input-border: color-mix(in srgb, var(--accent) 70%, var(--border));
-  --pencil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%233fb6ff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11.2 2.3l2.5 2.5-8.4 8.4-3.2.7.7-3.2z'/%3E%3Cpath d='M9.6 3.9l2.5 2.5'/%3E%3C/svg%3E");
+  --pencil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%234cc9ff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11.2 2.3l2.5 2.5-8.4 8.4-3.2.7.7-3.2z'/%3E%3Cpath d='M9.6 3.9l2.5 2.5'/%3E%3C/svg%3E");
   /* on the pale licence disc */
   --pencil-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%231e8fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11.2 2.3l2.5 2.5-8.4 8.4-3.2.7.7-3.2z'/%3E%3Cpath d='M9.6 3.9l2.5 2.5'/%3E%3C/svg%3E");
 
   /* traffic light */
-  --pass: #4ade80;
-  --warn: #fbbf24;
-  --fail: #f87171;
-  --info: #3fb6ff;
-  --incomplete: #7b8590;
+  --pass: #2ee6a6;
+  --warn: #ffc857;
+  --fail: #ff5d73;
+  --info: #4cc9ff;
+  --incomplete: #7487ad;
 
   /* legal vs manufacturer panels */
-  --legal: #3fb6ff;
+  --legal: #4cc9ff;
   --maker: #c084fc;
 
   /* charts (brakes diagram, weight budget). Checked for colour-blind
@@ -50,7 +55,7 @@
   --radius: 14px;
   --max-width: 1100px;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Rajdhani", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Sora", "Inter", system-ui, sans-serif;
 }
 
 *,
@@ -72,18 +77,56 @@ body {
   font-size: 1rem;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-/* Circuit-trace pattern, the same on psyphin.co.za and every PsyPhin tool
-   (change them together). Fixed behind the whole page so it shows all
-   the way down. */
-body::before {
+/* Fixed layers behind the whole page, the same on every PsyPhin site (change them
+   together): a glowing circuit board and slow-drifting pools of blue and violet
+   light. js/circuit.js (identical on every site) draws the circuit on two canvases
+   (.circuit-fx) and adds .fx-circuit to <html>, which hides the static fallback
+   tile in body::before. Here (owner's request, 2026-10-19) both are dimmer than
+   on the other sites and still: the pages set <html data-circuit="still">, so
+   circuit.js draws the board once with no pulses, and the light doesn't drift,
+   so nothing moves behind the text. */
+body::before,
+body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' fill='none'%3E%3Cg stroke='%233fb6ff' stroke-opacity='0.136' stroke-width='1'%3E%3Cpath d='M0 40h46l18 18h44M108 58v42l18 18h54M24 180v-44l18-18h34M180 22h-34L124 0M76 118v-20l-14-14H0M146 180v-26l12-12h22'/%3E%3C/g%3E%3Cg fill='%233fb6ff' fill-opacity='0.256'%3E%3Ccircle cx='108' cy='58' r='2.2'/%3E%3Ccircle cx='76' cy='118' r='2.2'/%3E%3Ccircle cx='146' cy='22' r='2.2'/%3E%3Ccircle cx='146' cy='154' r='2.2'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+body::before {
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' fill='none'%3E%3Cfilter id='g' filterUnits='userSpaceOnUse' x='-20' y='-20' width='220' height='220'%3E%3CfeGaussianBlur stdDeviation='1.8' result='b'/%3E%3CfeMerge%3E%3CfeMergeNode in='b'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3Cg filter='url(%23g)'%3E%3Cg stroke='%233fb6ff' stroke-opacity='0.18' stroke-width='1.1'%3E%3Cpath d='M0 40h46l18 18h44M108 58v42l18 18h54M24 180v-44l18-18h34M180 22h-34L124 0M76 118v-20l-14-14H0M146 180v-26l12-12h22'/%3E%3C/g%3E%3Cg stroke='%235cc8ff' stroke-opacity='0.38'%3E%3Ccircle cx='108' cy='58' r='2.6'/%3E%3Ccircle cx='76' cy='118' r='2.6'/%3E%3Ccircle cx='146' cy='22' r='2.6'/%3E%3Ccircle cx='146' cy='154' r='2.6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.fx-circuit body::before {
+  display: none;
+}
+
+body::after {
+  z-index: -2;
+  inset: -20%;
+  background:
+    radial-gradient(38% 32% at 82% 8%, rgba(47, 107, 255, 0.18), transparent 70%),
+    radial-gradient(30% 28% at 10% 40%, rgba(124, 92, 255, 0.1), transparent 70%),
+    radial-gradient(34% 30% at 70% 85%, rgba(0, 180, 255, 0.07), transparent 70%);
+}
+
+.circuit-fx {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+::selection {
+  background: rgba(76, 201, 255, 0.35);
+  color: #fff;
 }
 
 a {
@@ -157,9 +200,11 @@ h3 {
   flex-wrap: wrap;
   gap: 4px 10px;
   padding: 8px 16px 8px 12px;
-  border: 1px solid rgba(61, 155, 255, 0.45);
+  border: 1px solid rgba(76, 201, 255, 0.35);
   border-radius: 999px;
-  background: rgba(61, 155, 255, 0.08);
+  background: rgba(10, 20, 52, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   color: var(--text);
   font-size: 15px;
   font-weight: 600;
@@ -181,9 +226,9 @@ h3 {
 }
 
 .back-link:hover {
-  background: rgba(61, 155, 255, 0.16);
+  background: rgba(76, 201, 255, 0.14);
   border-color: var(--accent);
-  box-shadow: 0 0 18px rgba(61, 155, 255, 0.25);
+  box-shadow: 0 0 22px rgba(76, 201, 255, 0.3);
 }
 
 .back-link:hover .back-link-arrow {
@@ -1774,7 +1819,7 @@ select:focus {
 }
 
 .disc-field:focus-within {
-  box-shadow: 0 0 0 3px rgba(63, 182, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(76, 201, 255, 0.45);
 }
 
 .disc-unit {
@@ -2187,23 +2232,52 @@ select:focus {
 
 
 /* ------------------------------------------------------------ header
-   The same header as fuel.psyphin.co.za (.brand-bar in its style.css):
-   black band with a blue glow, the PsyPhin logo, a blue eyebrow, the title
-   and a one-line description. Keep the three in step. */
+   The same header as fuel.psyphin.co.za (.brand-bar in its style.css): navy
+   band with blue/violet glow and a glowing bottom edge, the PsyPhin logo, a cyan
+   eyebrow, the title and a one-line description. On the checker, js/fx.js draws
+   the rig hologram on canvas.hero-fx behind it. Keep the sites in step. */
 .brand-bar {
   position: relative;
+  overflow: hidden;
+  isolation: isolate;
   background:
-    radial-gradient(ellipse 60% 120% at 100% 0%, rgba(61, 155, 255, 0.18), transparent 60%),
-    #000000;
+    radial-gradient(ellipse 55% 90% at 82% 40%, rgba(47, 107, 255, 0.22), transparent 65%),
+    radial-gradient(ellipse 40% 70% at 0% 0%, rgba(124, 92, 255, 0.14), transparent 60%),
+    linear-gradient(180deg, #030614, rgba(3, 6, 20, 0.72));
   color: #ffffff;
-  border-bottom: 1px solid rgba(61, 155, 255, 0.35);
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Glowing line along the bottom edge, with a spark running along it. */
+.brand-bar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background:
+    linear-gradient(90deg, transparent 0 40%, rgba(255, 255, 255, 0.95) 50%, transparent 60% 100%) no-repeat,
+    linear-gradient(90deg, transparent, rgba(76, 201, 255, 0.7) 30%, rgba(124, 92, 255, 0.7) 70%, transparent);
+  background-size: 30% 100%, 100% 100%;
+  background-position: -40% 0, 0 0;
+  box-shadow: 0 0 14px rgba(76, 201, 255, 0.55);
+}
+
+.hero-fx {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
 }
 
 .brand-nav {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 12px 20px 0;
+  padding: 14px 20px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2221,6 +2295,17 @@ select:focus {
   gap: 20px 28px;
 }
 
+/* The checker: a taller header with room on the right for the rig hologram. */
+.brand-bar--hero .brand-inner {
+  min-height: 330px;
+  padding-top: 28px;
+  padding-bottom: 48px;
+}
+
+.brand-bar--hero .brand-text {
+  flex: 0 1 560px;
+}
+
 .brand-logo-link {
   flex-shrink: 0;
   display: block;
@@ -2228,14 +2313,16 @@ select:focus {
 }
 
 .brand-logo-link:focus-visible {
-  outline: 2px solid #3d9bff;
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
 
+/* The logo sits on black; "lighten" drops the black so it floats on the navy. */
 .brand-logo {
   width: 168px;
   height: auto;
   display: block;
+  mix-blend-mode: lighten;
 }
 
 .brand-text {
@@ -2243,30 +2330,56 @@ select:focus {
   min-width: 0;
 }
 
+.brand-text > * {
+  animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.brand-text > :nth-child(2) { animation-delay: 0.08s; }
+.brand-text > :nth-child(3) { animation-delay: 0.16s; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+}
+
 .brand-eyebrow {
-  margin: 0 0 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #3d9bff;
+  color: var(--accent);
+}
+
+.brand-eyebrow::before {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+  box-shadow: 0 0 8px var(--accent);
 }
 
 .brand-bar h1,
 .brand-title {
-  margin: 0 0 8px;
-  font-family: var(--font-body);
-  font-size: clamp(24px, 3.2vw, 34px);
-  line-height: 1.15;
-  font-weight: 700;
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3.6vw, 40px);
+  line-height: 1.12;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: #ffffff;
+  background: linear-gradient(100deg, #ffffff 0%, #d6ecff 40%, #7fd6ff 75%, #8f7bff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .brand-bar .subtitle {
   margin: 0;
-  color: #a9b4c2;
+  color: var(--text-muted);
   max-width: 62ch;
   font-size: 15px;
   line-height: 1.6;
@@ -2280,6 +2393,12 @@ select:focus {
   .brand-inner {
     padding: 16px;
     gap: 14px 18px;
+  }
+
+  .brand-bar--hero .brand-inner {
+    min-height: 0;
+    padding-top: 16px;
+    padding-bottom: 28px;
   }
 
   .brand-logo {
@@ -2297,7 +2416,9 @@ select:focus {
 
 @media print {
   .brand-bar,
-  body::before {
+  body::before,
+  body::after,
+  .circuit-fx {
     display: none;
   }
 }
@@ -3040,5 +3161,457 @@ select:focus {
   /* labels were fitted to the screen's width; the legend has every figure */
   .budget-label {
     text-overflow: ellipsis;
+  }
+}
+
+/* ------------------------------------------------------------ deep space finish
+   Screen only, so the print sheet keeps its plain light layout. Glass panels with
+   HUD corner brackets, glowing status, light running along the meters, a light
+   circling the scorecard in its verdict's colour, and gradient controls. Results
+   are rebuilt on every input, so nothing here animates their arrival; the
+   fade-ins (js/fx.js adds .fx-reveal / .is-visible) are for the form and the
+   explainers only. Everything stops under prefers-reduced-motion (end of file). */
+@media screen {
+  /* -------- glass */
+  .modes,
+  .inputs fieldset:not(.disc-fieldset),
+  .overall,
+  .panel,
+  .limit-tile,
+  .explainer,
+  .source-item,
+  .scorecard {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008)), var(--glass);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .check,
+  .tile,
+  .choice label,
+  .load-row,
+  .help-body,
+  .tow-speed,
+  .example,
+  .figure,
+  .advanced-note,
+  .score-count {
+    background-color: var(--glass-2);
+  }
+
+  .variant,
+  .brake-pin-label,
+  .brake-fix {
+    background-color: rgba(11, 19, 48, 0.72);
+  }
+
+  .tile--fail {
+    background: color-mix(in srgb, var(--fail) 10%, var(--glass-2));
+  }
+
+  .inputs fieldset,
+  .panel,
+  .scorecard,
+  .limit-tile {
+    position: relative;
+    border-radius: 18px;
+  }
+
+  /* -------- HUD corner brackets */
+  .inputs fieldset:not(.disc-fieldset)::after,
+  .panel::after,
+  .limit-tile::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    --c: rgba(76, 201, 255, 0.75);
+    background:
+      linear-gradient(var(--c), var(--c)) top left / 14px 1px,
+      linear-gradient(var(--c), var(--c)) top left / 1px 14px,
+      linear-gradient(var(--c), var(--c)) top right / 14px 1px,
+      linear-gradient(var(--c), var(--c)) top right / 1px 14px,
+      linear-gradient(var(--c), var(--c)) bottom left / 14px 1px,
+      linear-gradient(var(--c), var(--c)) bottom left / 1px 14px,
+      linear-gradient(var(--c), var(--c)) bottom right / 14px 1px,
+      linear-gradient(var(--c), var(--c)) bottom right / 1px 14px;
+    background-repeat: no-repeat;
+    filter: drop-shadow(0 0 4px rgba(76, 201, 255, 0.8));
+    opacity: 0.7;
+    transition: opacity 0.3s;
+  }
+
+  .panel--maker::after {
+    --c: rgba(192, 132, 252, 0.8);
+    filter: drop-shadow(0 0 4px rgba(192, 132, 252, 0.8));
+  }
+
+  .inputs fieldset:not(.disc-fieldset):hover::after,
+  .inputs fieldset:focus-within::after,
+  .panel:hover::after {
+    opacity: 1;
+  }
+
+  .inputs fieldset:focus-within {
+    border-color: rgba(76, 201, 255, 0.35);
+  }
+
+  .panel {
+    border-top-width: 2px;
+    box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 -2px 22px -8px var(--panel-color);
+  }
+
+  /* -------- headings in the display font, sized for Sora */
+  .inputs legend,
+  .fieldset-details > summary {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-shadow: 0 0 14px var(--accent-glow);
+  }
+
+  /* Section headings (Legal requirements, Manufacturer limits...) stand out
+     from the text under them: bright, in the panel's colour glow, with a
+     rule beneath and a filled tag. */
+  .panel h2 {
+    --hc: var(--panel-color, var(--accent));
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #fff;
+    padding-bottom: 10px;
+    border-bottom: 1px solid color-mix(in srgb, var(--hc) 45%, transparent);
+    text-shadow: 0 0 18px color-mix(in srgb, var(--hc) 65%, transparent);
+  }
+
+  .panel h2 .panel-tag {
+    background: color-mix(in srgb, var(--hc) 16%, transparent);
+    text-shadow: none;
+  }
+
+  /* The scorecard's "SA law" and "Manufacturer limits" group headings, the
+     same way: a coloured marker, bright text and a rule in the group's colour. */
+  .score-group {
+    --hc: var(--accent);
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #fff;
+    margin-top: 20px;
+    text-shadow: 0 0 14px color-mix(in srgb, var(--hc) 70%, transparent);
+  }
+
+  .score-group--law { --hc: var(--legal); }
+  .score-group--maker { --hc: var(--maker); }
+
+  .score-group::before {
+    content: "";
+    width: 4px;
+    height: 1.1em;
+    border-radius: 2px;
+    background: var(--hc);
+    box-shadow: 0 0 10px var(--hc);
+  }
+
+  .score-group::after {
+    border-top-color: color-mix(in srgb, var(--hc) 45%, transparent);
+  }
+
+  .check-head h3 {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .score-verdict p {
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+
+  .tile-figure {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .nav a {
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: color 0.2s, text-shadow 0.2s;
+  }
+
+  .nav a[aria-current="page"],
+  .nav a:hover {
+    text-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  /* -------- mode switch: a lit gradient pill */
+  .modes {
+    border-radius: 16px;
+    padding: 5px;
+  }
+
+  .mode-button {
+    font-size: 0.92rem;
+    font-weight: 600;
+    border-radius: 11px;
+    transition: color 0.2s, background-color 0.2s, box-shadow 0.25s;
+  }
+
+  .mode-button:hover {
+    background: rgba(76, 201, 255, 0.08);
+  }
+
+  .mode-button[aria-pressed="true"] {
+    color: #031022;
+    background: linear-gradient(100deg, var(--accent-strong), var(--accent));
+    box-shadow: 0 0 22px -2px rgba(76, 201, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+
+  /* -------- entries glow when they have focus */
+  input[type="number"],
+  select,
+  .load-row input {
+    transition: border-color 0.2s, box-shadow 0.25s;
+  }
+
+  input[type="number"]:hover,
+  select:hover {
+    border-color: var(--accent);
+  }
+
+  input[type="number"]:focus,
+  select:focus,
+  .load-row input:focus {
+    outline: 1px solid var(--accent);
+    outline-offset: 0;
+    box-shadow: 0 0 0 3px rgba(76, 201, 255, 0.18), 0 0 22px -4px var(--accent);
+  }
+
+  .choice label {
+    transition: border-color 0.2s, box-shadow 0.25s, background-color 0.2s;
+  }
+
+  .choice label:has(input:checked) {
+    box-shadow: inset 0 0 0 1px var(--accent), 0 0 20px -6px var(--accent);
+  }
+
+  /* -------- buttons */
+  .button {
+    position: relative;
+    overflow: hidden;
+    border-radius: 999px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+
+  .button--primary {
+    color: #031022;
+    background: linear-gradient(100deg, var(--accent-strong), var(--accent));
+    border-color: rgba(140, 220, 255, 0.6);
+    box-shadow: 0 0 0 1px rgba(76, 201, 255, 0.25), 0 8px 28px -8px rgba(47, 140, 255, 0.65);
+  }
+
+  .button--primary:hover {
+    background: linear-gradient(100deg, var(--accent-strong), var(--accent));
+    border-color: rgba(160, 230, 255, 0.8);
+    box-shadow: 0 0 0 1px rgba(76, 201, 255, 0.5), 0 10px 36px -6px rgba(76, 201, 255, 0.75);
+  }
+
+  .button--ghost {
+    background: rgba(11, 19, 48, 0.5);
+    border-color: rgba(76, 201, 255, 0.3);
+  }
+
+  .button--ghost:hover {
+    box-shadow: 0 0 22px -6px var(--accent-glow);
+  }
+
+  /* a sheen sweeps across on hover */
+  .button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -60%;
+    width: 40%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.6s ease;
+    pointer-events: none;
+  }
+
+  .button:hover::before {
+    left: 120%;
+  }
+
+  /* -------- status lights */
+  .status-icon {
+    box-shadow: 0 0 12px -1px var(--tone);
+  }
+
+  .check {
+    border-left-width: 3px;
+    box-shadow: inset 4px 0 18px -10px var(--tone);
+    transition: border-color 0.2s, box-shadow 0.25s;
+  }
+
+  .check:hover {
+    border-color: color-mix(in srgb, var(--tone) 45%, var(--border));
+    border-left-color: var(--tone);
+    box-shadow: inset 4px 0 18px -10px var(--tone), 0 0 26px -12px var(--tone);
+  }
+
+  /* a failed check's light pulses */
+  .check--fail .check-head .status-icon,
+  .tile--fail .status-icon,
+  .score-verdict.overall--fail .status-icon {
+    position: relative;
+  }
+
+  .check--fail .check-head .status-icon::after,
+  .tile--fail .status-icon::after,
+  .score-verdict.overall--fail .status-icon::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid var(--tone);
+    transform: scale(1.5);
+    opacity: 0.45;
+  }
+
+  .status-label {
+    text-shadow: 0 0 12px color-mix(in srgb, var(--tone) 55%, transparent);
+  }
+
+  /* -------- meters: glowing fill */
+  .meter-track,
+  .tile-meter {
+    border-radius: 999px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+
+  .meter-fill,
+  .tile-meter span {
+    position: relative;
+    overflow: hidden;
+    border-radius: 999px;
+    box-shadow: 0 0 12px -1px var(--tone);
+  }
+
+  .meter-fill::after,
+  .tile-meter span::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 50%;
+    background: linear-gradient(rgba(255, 255, 255, 0.28), transparent);
+  }
+
+  /* -------- scorecard: border in the verdict's colour */
+  .scorecard {
+    --ring: var(--accent);
+    border-color: transparent;
+  }
+
+  .scorecard:has(.overall--pass) { --ring: var(--pass); }
+  .scorecard:has(.overall--warn) { --ring: var(--warn); }
+  .scorecard:has(.overall--fail) { --ring: var(--fail); }
+
+  .scorecard::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(160deg, var(--ring), color-mix(in srgb, var(--ring) 25%, transparent) 60%, color-mix(in srgb, var(--ring) 55%, transparent));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
+  }
+
+  .score-verdict p {
+    text-shadow: 0 0 24px color-mix(in srgb, var(--tone, var(--accent)) 40%, transparent);
+  }
+
+  .tile {
+    border-top-width: 2px;
+    box-shadow: 0 -6px 18px -12px var(--tone);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.25s;
+  }
+
+  .tile:hover,
+  .tile:focus-visible {
+    box-shadow: 0 -6px 18px -12px var(--tone), 0 0 24px -10px var(--tone);
+    transform: translateY(-2px);
+  }
+
+  /* -------- explainers */
+  .explainer > summary {
+    transition: color 0.2s, text-shadow 0.2s;
+  }
+
+  .explainer > summary:hover {
+    text-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  .explainer[open] > :not(summary) {
+    animation: open-down 0.35s ease;
+  }
+
+  @keyframes open-down {
+    from { opacity: 0; transform: translateY(-4px); }
+  }
+
+  /* -------- fade-ins (form and explainers) */
+  .fx-reveal .inputs fieldset,
+  .fx-reveal .explainer {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.2s;
+  }
+
+  .fx-reveal .inputs fieldset.is-visible,
+  .fx-reveal .explainer.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* -------- footer */
+  .site-footer {
+    position: relative;
+    border-top: 0;
+  }
+
+  .site-footer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(76, 201, 255, 0.4), rgba(124, 92, 255, 0.35), transparent);
+  }
+
+  /* -------- the pinned counts bar on phones */
+  .score-bar.is-shown {
+    background: rgba(8, 14, 38, 0.92);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 -4px 20px -10px var(--tone, var(--accent));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-text > *,
+  .explainer[open] > :not(summary) {
+    animation: none !important;
+  }
+
+  .button::before {
+    display: none;
   }
 }

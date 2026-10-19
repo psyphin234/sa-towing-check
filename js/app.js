@@ -420,7 +420,7 @@
     );
     const group = (title, checks, labels, prefix) =>
       checks.length
-        ? [el("h3", { class: "score-group" }, title), el("div", { class: "tiles" }, checks.map((c) => tile(c, labels, input, brakeChart, prefix)))]
+        ? [el("h3", { class: `score-group score-group--${prefix.slice(0, -1)}` }, title), el("div", { class: "tiles" }, checks.map((c) => tile(c, labels, input, brakeChart, prefix)))]
         : null;
     document.getElementById("score-tiles").replaceChildren(
       ...[].concat(
