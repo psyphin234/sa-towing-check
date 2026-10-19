@@ -163,10 +163,13 @@
     if (d.front.kg === null || d.rear.kg === null)
       notes.push("Axle loads need weighbridge readings (with the trailer hitched). Enter them under Weighbridge and measurements.");
     if (d.lever) notes.push("The tow ball's effect on the axles is estimated from the wheelbase and the distance from the rear axle to the tow ball.");
+    // On screen, fx.js draws the rig live on a canvas (the same one each time);
+    // the SVG is then only for print.
+    const live = root.TOWING_RIGFX ? root.TOWING_RIGFX.show(d) : null;
     return el(
       "div",
       null,
-      el("figure", { class: "rig-figure" }, svgFor(d)),
+      el("figure", { class: live ? "rig-figure rig-figure--live" : "rig-figure" }, live, svgFor(d)),
       el(
         "div",
         { class: "table-wrap" },

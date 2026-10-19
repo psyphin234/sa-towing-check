@@ -3,9 +3,12 @@
      caravan drawn in light, driving along a moving road while a scan beam sweeps
      over them and tags the front axle, rear axle, tow ball and trailer axle as
      it passes. It shows no figures, so it can't be mistaken for a result;
+   - "Your rig at a glance" on screen (window.TOWING_RIGFX, used by diagram.js):
+     the same rig in light, with the user's own figures coloured by how close
+     each is to its limit (this file loads before app.js for that);
    - the form's fieldsets and the explainers fading in as they scroll into view.
-   Under prefers-reduced-motion the hologram is drawn once, fully scanned, and
-   the fade-ins are skipped. The circuit board behind the page is js/circuit.js. */
+   Under prefers-reduced-motion the hologram is drawn once, fully scanned, the
+   rig diagram stands still, and the fade-ins are skipped. The circuit board behind the page is js/circuit.js. */
 (function () {
   "use strict";
 
@@ -74,37 +77,109 @@
     ctx.closePath();
   }
 
-  function details(ctx) {
-    // bakkie: windows, pillar, door, bed, lamp, towbar and ball
-    ctx.moveTo(104, -82); ctx.lineTo(136, -118); ctx.lineTo(198, -120); ctx.lineTo(201, -82); ctx.closePath();
-    ctx.moveTo(160, -82); ctx.lineTo(162, -119);
-    ctx.moveTo(100, -76); ctx.lineTo(100, -40);
-    ctx.moveTo(208, -80); ctx.lineTo(208, -36);
-    ctx.moveTo(4, -55); ctx.lineTo(16, -57);
+  // The live rig diagram draws a sedan or a motor home instead of the bakkie
+  // when that's the vehicle type; same wheels, same tow ball.
+  function motorCar(ctx) {
+    ctx.moveTo(0, -26);
+    ctx.lineTo(2, -56);
+    ctx.lineTo(16, -66);
+    ctx.lineTo(92, -74);
+    ctx.lineTo(128, -112);
+    ctx.lineTo(236, -114);
+    ctx.lineTo(282, -80);
+    ctx.lineTo(300, -74);
+    ctx.lineTo(302, -30);
+    ctx.lineTo(270, -30);
+    ctx.arc(232, -30, 38, 0, Math.PI, true);
+    ctx.lineTo(100, -30);
+    ctx.arc(62, -30, 38, 0, Math.PI, true);
+    ctx.closePath();
+  }
+
+  function motorHome(ctx) {
+    ctx.moveTo(0, -26);
+    ctx.lineTo(2, -58);
+    ctx.lineTo(14, -68);
+    ctx.lineTo(46, -74);
+    ctx.lineTo(68, -110);
+    ctx.lineTo(40, -116);
+    ctx.lineTo(46, -150);
+    ctx.lineTo(290, -152);
+    ctx.quadraticCurveTo(302, -152, 302, -140);
+    ctx.lineTo(302, -30);
+    ctx.lineTo(270, -30);
+    ctx.arc(232, -30, 38, 0, Math.PI, true);
+    ctx.lineTo(100, -30);
+    ctx.arc(62, -30, 38, 0, Math.PI, true);
+    ctx.closePath();
+  }
+
+  var BODIES = { goodsVehicle: bakkie, motorCar: motorCar, motorHome: motorHome };
+  var ROOF = { goodsVehicle: -126, motorCar: -114, motorHome: -152 };   // at x = 150
+
+  function vehicleDetails(ctx, type) {
+    if (type === "motorCar") {
+      ctx.moveTo(100, -76); ctx.lineTo(130, -108); ctx.lineTo(230, -110); ctx.lineTo(268, -78); ctx.closePath();
+      ctx.moveTo(176, -76); ctx.lineTo(177, -110);
+      ctx.moveTo(100, -74); ctx.lineTo(100, -40);
+      ctx.moveTo(176, -76); ctx.lineTo(176, -40);
+      ctx.moveTo(4, -53); ctx.lineTo(16, -55);
+    } else if (type === "motorHome") {
+      ctx.moveTo(50, -76); ctx.lineTo(68, -106);
+      ctx.moveTo(110, -132); ctx.lineTo(170, -132); ctx.lineTo(170, -106); ctx.lineTo(110, -106); ctx.closePath();
+      ctx.moveTo(196, -132); ctx.lineTo(226, -132); ctx.lineTo(226, -40); ctx.lineTo(196, -40); ctx.closePath();
+      ctx.moveTo(60, -92); ctx.lineTo(302, -92);
+      ctx.moveTo(4, -55); ctx.lineTo(16, -57);
+    } else {
+      // bakkie: windows, pillar, door, bed, lamp
+      ctx.moveTo(104, -82); ctx.lineTo(136, -118); ctx.lineTo(198, -120); ctx.lineTo(201, -82); ctx.closePath();
+      ctx.moveTo(160, -82); ctx.lineTo(162, -119);
+      ctx.moveTo(100, -76); ctx.lineTo(100, -40);
+      ctx.moveTo(208, -80); ctx.lineTo(208, -36);
+      ctx.moveTo(4, -55); ctx.lineTo(16, -57);
+    }
+  }
+
+  function towbar(ctx) {
     ctx.moveTo(302, -36); ctx.lineTo(330, -36);
     ctx.moveTo(338, -40); ctx.arc(334, -40, 4, 0, Math.PI * 2);
+  }
+
+  function hitch(ctx) {
     // drawbar and jockey wheel
     ctx.moveTo(334, -40); ctx.lineTo(392, -34);
     ctx.moveTo(334, -40); ctx.lineTo(392, -48);
     ctx.moveTo(372, -40); ctx.lineTo(372, -15);
     ctx.moveTo(377, -10); ctx.arc(372, -10, 5, 0, Math.PI * 2);
-    // caravan: window, door, stripe
+  }
+
+  function caravanDetails(ctx) {
+    // window, door, stripe
     ctx.moveTo(424, -118); ctx.lineTo(474, -118); ctx.lineTo(474, -92); ctx.lineTo(424, -92); ctx.closePath();
     ctx.moveTo(522, -118); ctx.lineTo(560, -118); ctx.lineTo(560, -40); ctx.lineTo(522, -40); ctx.closePath();
     ctx.moveTo(392, -62); ctx.lineTo(600, -62);
   }
 
+  function details(ctx) {
+    vehicleDetails(ctx, "goodsVehicle");
+    towbar(ctx);
+    hitch(ctx);
+    caravanDetails(ctx);
+  }
+
+  function wheel(ctx, w, spin) {
+    var cy = -w.r;
+    ctx.moveTo(w.x + w.r, cy); ctx.arc(w.x, cy, w.r, 0, Math.PI * 2);
+    ctx.moveTo(w.x + w.r * 0.36, cy); ctx.arc(w.x, cy, w.r * 0.36, 0, Math.PI * 2);
+    for (var k = 0; k < 5; k++) {
+      var a = spin + (k * Math.PI * 2) / 5;
+      ctx.moveTo(w.x + Math.cos(a) * w.r * 0.36, cy + Math.sin(a) * w.r * 0.36);
+      ctx.lineTo(w.x + Math.cos(a) * w.r * 0.86, cy + Math.sin(a) * w.r * 0.86);
+    }
+  }
+
   function wheels(ctx, spin) {
-    WHEELS.forEach(function (w) {
-      var cy = -w.r;
-      ctx.moveTo(w.x + w.r, cy); ctx.arc(w.x, cy, w.r, 0, Math.PI * 2);
-      ctx.moveTo(w.x + w.r * 0.36, cy); ctx.arc(w.x, cy, w.r * 0.36, 0, Math.PI * 2);
-      for (var k = 0; k < 5; k++) {
-        var a = spin + (k * Math.PI * 2) / 5;
-        ctx.moveTo(w.x + Math.cos(a) * w.r * 0.36, cy + Math.sin(a) * w.r * 0.36);
-        ctx.lineTo(w.x + Math.cos(a) * w.r * 0.86, cy + Math.sin(a) * w.r * 0.86);
-      }
-    });
+    WHEELS.forEach(function (w) { wheel(ctx, w, spin); });
   }
 
   function setUpHologram() {
@@ -339,6 +414,356 @@
     });
     update();
   }
+
+  // ------------------------------------------------------- live rig diagram
+  // "Your rig at a glance" on screen: the rig in light on a moving road, with
+  // the mass at each point from ratings.rigDiagram(), coloured by how close it
+  // is to its limit. diagram.js calls TOWING_RIGFX.show(data) on every render
+  // and puts the canvas it returns in the figure. It's the same canvas each
+  // time, so the animation carries on and a changed figure counts to its new
+  // value. The SVG beside it is for print. The colours are lenient on purpose
+  // (owner's request): a hard limit (GVM, GCM, axle ratings, the trailer's
+  // plated GVM) stays green to 85 %, turns orange by 90 % and red from 94 %;
+  // the tow ball is green up to its maximum (sitting right on the recommended
+  // 100 kg is what you aim for), orange over the recommended maximum and red
+  // over the maker's rating, as its check says.
+  var GREEN = [46, 230, 166], ORANGE = [255, 166, 64], RED = [255, 93, 115];
+  var NEUTRAL = [76, 201, 255], NONE = [120, 140, 180];
+  var SHORT = { GVM: "GVM", GCM: "GCM", rating: "rating", "recommended maximum": "max", maximum: "max", "plated GVM": "GVM" };
+  var SW = 700, SH = 410, TOP = -262;   // the scene, in rig units
+
+  function kg(n) {
+    return window.TOWING_CHECKS.kg(n);
+  }
+
+  function mix(a, b, t) {
+    return [0, 1, 2].map(function (i) { return Math.round(a[i] + (b[i] - a[i]) * t); });
+  }
+
+  function rgba(c, a) {
+    return "rgba(" + c[0] + ", " + c[1] + ", " + c[2] + ", " + a + ")";
+  }
+
+  function tone(p, kind) {
+    if (!p || p.kg === null) return { c: p && p.changeKg !== undefined ? NEUTRAL : NONE, f: null, pulse: false };
+    if (p.limit === null) return { c: NEUTRAL, f: null, pulse: false };
+    var f = p.kg / p.limit, c;
+    if (kind === "towball") c = p.status === "fail" ? RED : f > 1 ? ORANGE : GREEN;
+    else if (f <= 0.85) c = GREEN;
+    else if (f <= 0.9) c = mix(GREEN, ORANGE, (f - 0.85) / 0.05);
+    else if (f < 0.94) c = mix(ORANGE, RED, (f - 0.9) / 0.04);
+    else c = RED;
+    return { c: c, f: f, pulse: kind === "towball" ? p.status === "fail" : f > 1 };
+  }
+
+  var rigLive = (function () {
+    var canvas = null, ctx = null, data = null, shown = {};
+    var w = 0, h = 0, s = 1, running = false, visible = false, raf = 0, last = 0;
+
+    function setUp() {
+      canvas = document.createElement("canvas");
+      canvas.className = "rig-live";
+      canvas.setAttribute("role", "img");
+      canvas.setAttribute("aria-label", "Side view of the rig with the mass on each axle, the tow ball, the vehicle, the trailer and the whole rig, coloured by how close each is to its limit. The same figures are in the table below.");
+      ctx = canvas.getContext("2d");
+      if ("ResizeObserver" in window) new ResizeObserver(function () { if (resize()) still(); }).observe(canvas);
+      if ("IntersectionObserver" in window) {
+        new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; update(); }).observe(canvas);
+      } else visible = true;
+      document.addEventListener("visibilitychange", update);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(still);
+    }
+
+    function resize() {
+      var cw = canvas.clientWidth;
+      if (!cw) return false;
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Text has a minimum size, so a narrow canvas gets a little taller.
+      w = cw; h = (cw * SH) / SW + (cw < 440 ? 36 : 0); s = cw / SW;
+      canvas.style.height = h + "px";
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return true;
+    }
+
+    function items(d, type) {
+      var list = [{ key: "vehicle", x: 150, top: true, name: "VEHICLE", p: d.vehicle, kind: "mass", to: ROOF[type] }];
+      if (d.trailerCount) {
+        list.push({ key: "towball", x: 334, top: true, name: "TOW BALL", p: d.towball, kind: "towball", to: -50 });
+        list.push({ key: "trailer", x: 518, top: true, name: d.trailerCount > 1 ? d.trailerCount + " TRAILERS" : "TRAILER", p: d.trailer, kind: "mass", to: -148 });
+      }
+      list.push({ key: "front", x: 62, name: "FRONT AXLE", p: d.front, kind: "axle" });
+      list.push({ key: "rear", x: 232, name: "REAR AXLE", p: d.rear, kind: "axle" });
+      if (d.trailerCount) list.push({ key: "trailerAxles", x: 500, name: "TRAILER AXLE", p: d.trailerAxles, kind: "axle" });
+      if (d.combined) list.push({ key: "combined", name: "WHOLE RIG", p: d.combined, kind: "mass", bar: true });
+      list.forEach(function (it) { it.t = tone(it.p, it.kind); });
+      return list;
+    }
+
+    function target(p) {
+      if (!p) return null;
+      if (p.kg !== null) return p.kg;
+      return p.changeKg !== undefined ? p.changeKg : null;
+    }
+
+    function valueText(it) {
+      var p = it.p, v = shown[it.key];
+      if (!p || v === undefined || v === null) return "—";
+      if (p.kg !== null) return kg(v);
+      var r = Math.round(v);
+      return (r >= 0 ? "+" : "−") + kg(Math.abs(r));
+    }
+
+    function subText(it) {
+      var p = it.p;
+      if (!p) return "";
+      if (p.kg === null) return p.changeKg !== undefined ? "tow ball effect" : it.kind === "axle" ? "weigh to see" : "";
+      if (p.limit !== null)
+        return (it.t.f > 1 ? "over " : "of ") + kg(p.limit) + " " + (SHORT[p.limitLabel] || p.limitLabel) + " · " + Math.round(it.t.f * 100) + " %";
+      if (p.source === "estimate") return "estimate";
+      if (p.source === "plated") return "plated GVM";
+      return "";
+    }
+
+    function font(weight, px, family) {
+      return weight + " " + px / s + "px " + family;
+    }
+
+    function stroke(colour, width, blur) {
+      ctx.strokeStyle = rgba(colour, 0.85);
+      ctx.lineWidth = width / s;
+      ctx.shadowColor = rgba(colour, 0.9);
+      ctx.shadowBlur = blur;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    function draw(t, snap) {
+      if (!data || !w || !canvas.isConnected) return;
+      var time = t / 1000;
+      var dt = last ? Math.min((t - last) / 1000, 0.1) : 0;
+      last = t;
+      var d = data, type = BODIES[d.vehicleType] ? d.vehicleType : "goodsVehicle", trailer = d.trailerCount > 0;
+      var list = items(d, type), by = {};
+      var ease = snap ? 1 : 1 - Math.exp(-dt * 6);
+      list.forEach(function (it) {
+        by[it.key] = it;
+        var v = target(it.p);
+        if (v === null) { shown[it.key] = null; return; }
+        var cur = shown[it.key];
+        shown[it.key] = cur === undefined || cur === null || Math.abs(v - cur) < 0.5 ? v : cur + (v - cur) * ease;
+      });
+      var part = function (key) {
+        var it = by[key];
+        return !it || it.t.c === NONE ? NEUTRAL : it.t.c;
+      };
+      var pulse = reduceMotion ? 0.5 : 0.5 + 0.5 * Math.sin(time * 4.5);
+      var narrow = w < 440;
+      var x1 = trailer ? 600 : 334, centre = trailer ? 300 : 167;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      ctx.translate(w / 2 - centre * s, -TOP * s);
+      ctx.scale(s, s);
+
+      // Light pooled under the rig.
+      var pool = ctx.createRadialGradient(centre, -40, 10, centre, -40, 380);
+      pool.addColorStop(0, "rgba(47, 107, 255, 0.2)");
+      pool.addColorStop(1, "rgba(47, 107, 255, 0)");
+      ctx.fillStyle = pool;
+      ctx.fillRect(centre - SW / 2, TOP, SW, SH);
+
+      // The road sliding past (the rig drives left, so the world moves right).
+      var L = centre - SW / 2, R = centre + SW / 2;
+      var road = ctx.createLinearGradient(L, 0, R, 0);
+      road.addColorStop(0, "rgba(76, 201, 255, 0)");
+      road.addColorStop(0.15, "rgba(76, 201, 255, 0.6)");
+      road.addColorStop(0.85, "rgba(76, 201, 255, 0.6)");
+      road.addColorStop(1, "rgba(76, 201, 255, 0)");
+      ctx.beginPath(); ctx.moveTo(L, 0); ctx.lineTo(R, 0);
+      ctx.strokeStyle = road; ctx.lineWidth = 1.2 / s;
+      ctx.shadowColor = "rgba(76, 201, 255, 0.9)"; ctx.shadowBlur = 8; ctx.stroke(); ctx.shadowBlur = 0;
+      var move = reduceMotion ? 0 : time * 140;
+      ctx.strokeStyle = "rgba(76, 201, 255, 0.3)";
+      ctx.lineWidth = 2 / s;
+      ctx.beginPath();
+      for (var x = L - 60 + (move % 60); x < R; x += 60) { ctx.moveTo(x, 12); ctx.lineTo(x + 26, 12); }
+      ctx.stroke();
+      ctx.lineWidth = 0.8 / s;
+      for (var gx = L - 40 + (move % 40); gx < R; gx += 40) {
+        var edge = 1 - Math.min(1, Math.abs(gx - centre) / (SW / 2));
+        ctx.strokeStyle = "rgba(76, 201, 255, " + 0.16 * edge + ")";
+        ctx.beginPath(); ctx.moveTo(gx, 2); ctx.lineTo(centre + (gx - centre) * 1.3, 30); ctx.stroke();
+      }
+      ctx.strokeStyle = "rgba(76, 201, 255, 0.1)";
+      ctx.beginPath(); ctx.moveTo(L, 24); ctx.lineTo(R, 24); ctx.stroke();
+
+      // The rig, each part in its own colour.
+      var bob = reduceMotion ? 0 : Math.sin(time * 7) * 0.7, lag = reduceMotion ? 0 : Math.sin(time * 7 - 0.9) * 0.7;
+      var spin = reduceMotion ? 0 : -time * 5;
+      var fillBody = function (path, colour) {
+        ctx.save();
+        ctx.beginPath(); path(ctx);
+        var g = ctx.createLinearGradient(0, -155, 0, 0);
+        g.addColorStop(0, rgba(colour, 0.13));
+        g.addColorStop(1, rgba(colour, 0.02));
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.clip();
+        ctx.fillStyle = rgba(colour, 0.08);
+        for (var ly = -156 + ((reduceMotion ? 0 : time * 12) % 4); ly < 0; ly += 4) ctx.fillRect(0, ly, 600, 1 / s);
+        ctx.restore();
+      };
+      var cV = part("vehicle"), cB = part("towball"), cT = part("trailer");
+      ctx.save(); ctx.translate(0, bob);
+      fillBody(BODIES[type], cV);
+      ctx.beginPath(); BODIES[type](ctx); stroke(cV, 1.6, 7);
+      ctx.beginPath(); vehicleDetails(ctx, type); stroke(cV, 1.1, 4);
+      if (trailer) { ctx.beginPath(); towbar(ctx); stroke(cB, 1.6, 8); }
+      ctx.restore();
+      if (trailer) {
+        ctx.save(); ctx.translate(0, lag);
+        fillBody(caravan, cT);
+        ctx.beginPath(); caravan(ctx); stroke(cT, 1.6, 7);
+        ctx.beginPath(); caravanDetails(ctx); stroke(cT, 1.1, 4);
+        ctx.restore();
+        ctx.save(); ctx.translate(0, (bob + lag) / 2);
+        ctx.beginPath(); hitch(ctx); stroke(cB, 1.3, 6);
+        ctx.restore();
+      }
+      [["front", WHEELS[0]], ["rear", WHEELS[1]], ["trailerAxles", WHEELS[2]]].forEach(function (pair) {
+        if (pair[0] === "trailerAxles" && !trailer) return;
+        ctx.beginPath(); wheel(ctx, pair[1], spin); stroke(part(pair[0]), 1.4, 6);
+      });
+
+      // Figures.
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+      var valuePx = Math.max(13, 26 * s), namePx = Math.max(9, 11 * s), subPx = Math.max(9, 13 * s);
+      var nameAt = function (str, x, y, align) {
+        ctx.font = font(600, namePx, "Inter, system-ui, sans-serif");
+        if ("letterSpacing" in ctx) ctx.letterSpacing = 1.4 / s + "px";
+        ctx.fillStyle = "rgba(160, 190, 230, 0.85)";
+        ctx.textAlign = align || "center";
+        ctx.fillText(str, x, y);
+        var width = ctx.measureText(str).width;
+        if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+        return width;
+      };
+      var valueAt = function (it, x, y, align) {
+        ctx.font = font(700, valuePx, "Sora, Inter, system-ui, sans-serif");
+        ctx.textAlign = align || "center";
+        ctx.fillStyle = it.t.c === NONE ? "rgba(150, 165, 200, 0.8)" : rgba(mix(it.t.c, [255, 255, 255], 0.15), 1);
+        ctx.shadowColor = rgba(it.t.c, 0.8);
+        ctx.shadowBlur = it.t.pulse ? 8 + 14 * pulse : 8;
+        ctx.fillText(valueText(it), x, y);
+        ctx.shadowBlur = 0;
+      };
+      var subAt = function (it, x, y, align) {
+        if (narrow) return;
+        var str = subText(it);
+        if (!str) return;
+        ctx.font = font(500, subPx, "Inter, system-ui, sans-serif");
+        ctx.textAlign = align || "center";
+        ctx.fillStyle = it.t.pulse ? rgba(RED, 0.75 + 0.25 * pulse) : "rgba(185, 205, 235, 0.8)";
+        ctx.fillText(str, x, y);
+      };
+      var meter = function (it, x0, y, width) {
+        ctx.fillStyle = "rgba(120, 170, 255, 0.16)";
+        ctx.fillRect(x0, y, width, 4);
+        if (it.t.f === null) return;
+        ctx.fillStyle = rgba(it.t.c, it.t.pulse ? 0.7 + 0.3 * pulse : 0.95);
+        ctx.shadowColor = rgba(it.t.c, 0.9);
+        ctx.shadowBlur = 8;
+        ctx.fillRect(x0, y, width * Math.min(it.t.f, 1), 4);
+        ctx.shadowBlur = 0;
+      };
+
+      // Rows are spaced by the text's size on screen, which has a minimum.
+      var topValue = -236 + (valuePx + 4) / s;
+      var topMeter = (narrow ? topValue : topValue + (subPx + 5) / s) + 7 / s;
+      var lowValue = 30 + (valuePx * 0.78 + 4) / s;
+      var lowName = lowValue + (namePx + 6) / s;
+      var barText = (narrow ? lowName : lowName + (subPx + 4) / s) + (namePx + 10) / s;
+
+      list.forEach(function (it) {
+        if (it.bar) return;
+        if (it.top) {
+          nameAt(it.name, it.x, -236);
+          valueAt(it, it.x, topValue);
+          subAt(it, it.x, topValue + (subPx + 5) / s);
+          meter(it, it.x - 48, topMeter, 96);
+          // a leader down to the part; the tow ball's flows down onto the ball
+          var c = it.t.c === NONE ? NEUTRAL : it.t.c, flow = it.key === "towball";
+          ctx.strokeStyle = rgba(c, flow ? 0.8 : 0.45);
+          ctx.lineWidth = (flow ? 1.6 : 1) / s;
+          ctx.setLineDash(flow ? [6 / s, 5 / s] : [3 / s, 4 / s]);
+          ctx.lineDashOffset = flow && !reduceMotion ? -time * 26 / s : 0;
+          ctx.beginPath(); ctx.moveTo(it.x, topMeter + 10 / s); ctx.lineTo(it.x, it.to - 8); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.lineDashOffset = 0;
+          ctx.fillStyle = rgba(c, 0.95);
+          ctx.beginPath(); ctx.moveTo(it.x - 5, it.to - 12); ctx.lineTo(it.x + 5, it.to - 12); ctx.lineTo(it.x, it.to - 3); ctx.closePath(); ctx.fill();
+        } else {
+          valueAt(it, it.x, lowValue);
+          nameAt(it.name, it.x, lowName);
+          subAt(it, it.x, lowName + (subPx + 4) / s);
+        }
+      });
+
+      // The whole rig against its GCM, as a bar along the bottom.
+      var all = by.combined;
+      if (all) {
+        var nameW = nameAt(all.name, 0, barText, "left") + 10 / s;
+        var saved = valuePx;
+        valuePx = Math.max(12, 18 * s);
+        valueAt(all, nameW, barText + 1 / s, "left");
+        valuePx = saved;
+        subAt(all, x1, barText, "right");
+        meter(all, 0, barText + 7 / s, x1);
+      }
+
+      // HUD corners and a "live" light.
+      var hl = -44, hr = x1 + 44, ht = TOP + 6, hb = h / s + TOP - 6, k = 16;
+      ctx.strokeStyle = "rgba(76, 201, 255, 0.45)";
+      ctx.lineWidth = 1 / s;
+      ctx.beginPath();
+      ctx.moveTo(hl, ht + k); ctx.lineTo(hl, ht); ctx.lineTo(hl + k, ht);
+      ctx.moveTo(hr - k, ht); ctx.lineTo(hr, ht); ctx.lineTo(hr, ht + k);
+      ctx.moveTo(hl, hb - k); ctx.lineTo(hl, hb); ctx.lineTo(hl + k, hb);
+      ctx.moveTo(hr - k, hb); ctx.lineTo(hr, hb); ctx.lineTo(hr, hb - k);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(46, 230, 166, " + (reduceMotion ? 0.9 : 0.5 + 0.5 * pulse) + ")";
+      ctx.beginPath(); ctx.arc(hl + 14, ht + 14, 3.2, 0, Math.PI * 2); ctx.fill();
+      nameAt("LIVE", hl + 24, ht + 18, "left");
+      ctx.restore();
+    }
+
+    function still() { draw(performance.now(), true); }
+
+    function loop(t) { draw(t, false); raf = requestAnimationFrame(loop); }
+
+    function update() {
+      var should = !reduceMotion && visible && !document.hidden && canvas.isConnected;
+      if (should && !running) { running = true; last = 0; raf = requestAnimationFrame(loop); }
+      if (!should && running) { running = false; cancelAnimationFrame(raf); }
+    }
+
+    function show(d) {
+      if (!canvas) setUp();
+      data = d;
+      requestAnimationFrame(function () {
+        if (resize() && !running) still();
+        update();
+      });
+      return canvas;
+    }
+
+    return { show: show };
+  })();
+
+  window.TOWING_RIGFX = { show: rigLive.show };
 
   function start() { setUpReveal(); setUpHologram(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);

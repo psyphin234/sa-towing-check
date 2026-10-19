@@ -1920,6 +1920,19 @@ select:focus {
   height: auto;
 }
 
+/* The live rig (fx.js, which sets its height) replaces the SVG on screen; the
+   SVG stays for print. */
+.rig-live {
+  display: block;
+  width: 100%;
+}
+
+@media screen {
+  .rig-figure--live .rig-svg {
+    display: none;
+  }
+}
+
 .rig-ground {
   stroke: var(--border);
   stroke-width: 2;
@@ -2418,7 +2431,8 @@ select:focus {
   .brand-bar,
   body::before,
   body::after,
-  .circuit-fx {
+  .circuit-fx,
+  .rig-live {
     display: none;
   }
 }
