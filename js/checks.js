@@ -159,7 +159,7 @@
       "licence",
       title,
       "fail",
-      `This needs code ${required}; code ${input.licenceCode} only covers ${p.includes[input.licenceCode].join(", ")}. ${why}`,
+      `This needs code ${required}. Code ${input.licenceCode} only covers ${p.includes[input.licenceCode].join(", ")}. ${why}`,
       ids,
       notes,
       data
@@ -247,7 +247,7 @@
       `${gvmText} behind a tare of ${kg(input.tareKg)} needs ${BRAKE_TEXT[need.level]} (reg ${need.clause}).`;
 
     const notes = [
-      `Limits for your tare: no brakes up to ${kg(max.none)}; overrun brakes up to ${kg(max.overrun)}; above that a service brake is required.`,
+      `Limits for your tare: no brakes up to ${kg(max.none)}, overrun brakes up to ${kg(max.overrun)}, and a service brake above that.`,
       rule.notes[0],
     ];
     if (t.count > 1) notes.push(rule.notes[1]);
@@ -496,7 +496,7 @@
         ids
       );
     const tb = input.towballKg;
-    const grey = "The caravan and light trailer specification sets this range; whether it's enforceable law is a grey area (see the source link).";
+    const grey = "The caravan and light trailer specification sets this range. Whether it's enforceable law is a grey area (see the source link).";
     if (tb > p.maxKg)
       return Object.assign(
         result(

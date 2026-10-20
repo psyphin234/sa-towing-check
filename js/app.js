@@ -291,7 +291,7 @@
       el(
         "p",
         { class: "hint" },
-        "Legal limits apply to the trailer's plated GVM; manufacturer limits to what it actually weighs. Stay under all of them.",
+        "Legal limits use the trailer's plated GVM. Manufacturer limits use what it actually weighs. Stay under all of them.",
         t.notes.length ? " " + t.notes.join(" ") : ""
       )
     );
@@ -506,7 +506,7 @@
         "p",
         { class: "tow-figure-sub" },
         row.legalMaxKg === null
-          ? "Reg 151 and your licence code set no trailer limit here; manufacturer ratings still apply."
+          ? "Reg 151 and your licence code set no trailer limit here. Manufacturer ratings still apply."
           : "Heaviest trailer GVM allowed by law"
       ),
       row.legal.length || row.maker.length
@@ -636,7 +636,7 @@
       el(
         "p",
         { class: "hint" },
-        "Trailer brakes depend only on tare, so they never differ. Manufacturer ratings (payload, GCM, towing capacity) are the same for both; see Check my rig."
+        "Trailer brakes depend only on tare, so they never differ. Manufacturer ratings (payload, GCM, towing capacity) are the same for both. See Check my rig."
       ),
       citeList(ids)
     );

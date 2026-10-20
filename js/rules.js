@@ -175,7 +175,7 @@
       sourceLabel: SRC.regs2012.label,
       ...UNVERIFIED,
       notes: [
-        "The definitions depend on what a vehicle is \"designed or adapted\" for; how a particular double cab is registered is not settled by the regulation text. See Still to check.",
+        "The definitions depend on what a vehicle is \"designed or adapted\" for. The regulation text doesn't say how a particular double cab must be registered. See Still to check.",
         "Not from the regulation: the registration certificate's \"Vehicle category\" line states it. A goods vehicle up to 3 500 kg GVM shows \"Light load vehicle (GVM 3500Kg or less)\".",
         "Not from the regulation: one example seen, a 2023 GWM P-Series double cab, is registered with vehicle category \"Light load vehicle (GVM 3500Kg or less)\" and description \"Pick-up / Bakkie\", so that double cab is a goods vehicle. One example doesn't show all double cabs are.",
         "A motor home built on a truck or van chassis (an Iveco, say) is classed by its tare only if it's registered as a motor home. If its papers say goods vehicle, it's classed by its GVM. What a motor home's registration certificate shows hasn't been checked yet: see Still to check.",
@@ -205,7 +205,7 @@
       ...VERIFIED,
       notes: [
         "Because tare excludes fuel, the fuel in the tank always counts against payload.",
-        "Checked against the Act as published; later amendments to the Act were not available to check, but every current copy found gives the same wording.",
+        "Checked against the Act as published. Later amendments to the Act were not available to check, but every current copy found gives the same wording.",
       ],
     },
     {
@@ -237,7 +237,7 @@
       category: "legal",
       title: "Driving licence code",
       summary:
-        "A motor vehicle (a motor car or a motor home, for example) is classed by its tare; a minibus, midibus, bus or goods vehicle by its GVM. Up to 3 500 kg: code B with a trailer GVM up to 750 kg, EB with a heavier trailer. Over 3 500 kg up to 16 000 kg: C1, or EC1 with a trailer over 750 kg. Heavier: C or EC.",
+        "A motor vehicle (a motor car or a motor home, for example) is classed by its tare. A minibus, midibus, bus or goods vehicle is classed by its GVM. Up to 3 500 kg: code B with a trailer GVM up to 750 kg, EB with a heavier trailer. Over 3 500 kg up to 16 000 kg: C1, or EC1 with a trailer over 750 kg. Heavier: C or EC.",
       regulation: "National Road Traffic Regulations, reg 99(4)(a) (as substituted by GN R53 of 2011 and GN R846 of 2014)",
       sourceUrl: SRC.regs2012.url,
       sourceLabel: SRC.regs2012.label,
@@ -269,7 +269,7 @@
         outOfScopeCodes: ["C", "EC"],
       },
       notes: [
-        "With two trailers this tool uses the sum of the trailer GVMs for the 750 kg test; the regulation speaks of \"a trailer\". Confirm with your DLTC.",
+        "With two trailers this tool uses the sum of the trailer GVMs for the 750 kg test, but the regulation speaks of \"a trailer\". Confirm with your DLTC.",
         "Code B names motor homes outright: a motor home is classed by its tare, so one with a GVM over 3 500 kg but a tare up to 3 500 kg needs only code B, or EB with a trailer over 750 kg.",
       ],
     },
@@ -296,7 +296,7 @@
       category: "legal",
       title: "Trailer brakes vs tow vehicle tare",
       summary:
-        "The brakes a trailer needs depend only on its GVM and the tow vehicle's tare; engine power and the factory towing capacity play no part. Up to 750 kg and up to half the tare: parking brake (or other device to keep it stationary). Over half the tare, up to the tare (and up to 3 500 kg): parking brake plus overrun or service brake. Over the tare, or over 3 500 kg: parking brake plus a service brake the driver can operate.",
+        "The brakes a trailer needs depend only on its GVM and the tow vehicle's tare. Engine power and the factory towing capacity don't come into it. Up to 750 kg and up to half the tare: parking brake (or other device to keep it stationary). Over half the tare, up to the tare (and up to 3 500 kg): parking brake plus overrun or service brake. Over the tare, or over 3 500 kg: parking brake plus a service brake the driver can operate.",
       regulation: "National Road Traffic Regulations, reg 151(1)–(3)",
       sourceUrl: SRC.regs2012.url,
       sourceLabel: SRC.regs2012.label,
@@ -431,7 +431,7 @@
       ...VERIFIED,
       params: { maxMassToDrivingAxleRatio: 5 },
       notes: [
-        "A part-time 4x4 driven in 2WD may only have its rear axle driving; whether that changes the driving axle(s) for this rule is unconfirmed.",
+        "A part-time 4x4 driven in 2WD may only have its rear axle driving. It's not confirmed whether that changes the driving axle(s) for this rule.",
       ],
     },
 
@@ -450,7 +450,7 @@
       lastChecked: "2026-10-01",
       params: { minKg: 25, maxKg: 100, maxTrailerGvmKg: 3500 },
       notes: [
-        "Not clearly a road traffic law: a grey area. The 25–100 kg is not in the National Road Traffic Regulations themselves. It is clause 3.5.2 of VC 8026, the compulsory specification for category O1/O2 trailers (caravans and light trailers), and its wording is aimed at the trailer's design: the maker must set a maximum and minimum within 25–100 kg.",
+        "Not clearly a road traffic law, it's a grey area. The 25–100 kg is not in the National Road Traffic Regulations themselves. It is clause 3.5.2 of VC 8026, the compulsory specification for category O1/O2 trailers (caravans and light trailers), and its wording is aimed at the trailer's design: the maker must set a maximum and minimum within 25–100 kg.",
         "Reg 216(1) says a trailer operated on a public road \"shall comply with the relevant requirements\" of the compulsory specifications (those listed in Annex A to SABS 047), so a trailer loaded to more than 100 kg on the ball arguably doesn't comply. No regulation or court decision found says outright that towing with more than 100 kg on the ball is an offence.",
         "The 2008 draft of this specification (GN R1395, on gov.za) has the same 25–100 kg wording in cl. 3.5.2. Its scope (cl. 1.1) is \"vehicle models\", and compliance is shown by homologating each model (cl. 7.1), which supports reading the limit as a design requirement on the trailer maker.",
         "Many South African sources (CaravanSA, forums, towing guides) state 25–100 kg as the law without citing a clause. Separately, VC 8065 makes SANS 1505 compulsory for ball couplings and towing brackets: that governs how they are made and rated, not what you load.",
@@ -469,7 +469,7 @@
       sourceLabel: SRC.regs2012.label,
       ...VERIFIED,
       params: { maxCombinationLengthM: 22, maxTrailerLengthM: 8, trailerLengthGvmMaxKg: 12000 },
-      notes: ["Shown for reference; the checker doesn't ask for lengths."],
+      notes: ["Shown for reference only. The checker doesn't ask for lengths."],
     },
 
     // ---------------------------------------------------------------- manufacturer ratings (not law)
@@ -504,7 +504,7 @@
       category: "manufacturer",
       title: "Towing capacity",
       summary:
-        "The manufacturer rates the heaviest trailer the vehicle may tow: one figure for a braked trailer and a lower one for an unbraked trailer. This is a rating, not the legal limit; reg 151 can set a lower legal limit.",
+        "The manufacturer rates the heaviest trailer the vehicle may tow: one figure for a braked trailer and a lower one for an unbraked trailer. This is a rating, not the legal limit. Reg 151 can set a lower legal limit.",
       regulation: "Vehicle manufacturer's towing capacity (owner's manual)",
       sourceUrl: SRC.carsCoZa.url,
       sourceLabel: SRC.carsCoZa.label,
@@ -533,7 +533,7 @@
       sourceLabel: SRC.regs2012.label,
       ...SOURCE_CHECKED,
       notes: [
-        "Estimate used: extra rear axle load = tow ball mass × (wheelbase + rear overhang) ÷ wheelbase; front axle load drops by tow ball mass × rear overhang ÷ wheelbase. Rear overhang is measured from the rear axle centre to the tow ball.",
+        "Estimate used: extra rear axle load = tow ball mass × (wheelbase + rear overhang) ÷ wheelbase. The front axle load drops by tow ball mass × rear overhang ÷ wheelbase. Rear overhang is measured from the rear axle centre to the tow ball.",
       ],
     },
     {

@@ -143,10 +143,10 @@
 
     const notes = [];
     if (!input.vehicleType && licenceClass(Object.assign({}, input, { vehicleType: "motorCar" })).cls !== lic.cls)
-      notes.push("The licence code needed depends on how the vehicle is registered (a motor car is classed by its tare, a goods vehicle by its GVM); this uses the stricter case. Choose the vehicle type to be sure.");
+      notes.push("The licence code needed depends on how the vehicle is registered (a motor car is classed by its tare, a goods vehicle by its GVM). This uses the stricter case. Choose the vehicle type to be sure.");
     if (!input.licenceCode)
       notes.push(
-        `Trailers up to ${kg(lic.lightTrailerMaxKg)} GVM need code ${lic.lightCode}; heavier trailers need code ${lic.heavyCode}. Choose your licence code to apply it.`
+        `Trailers up to ${kg(lic.lightTrailerMaxKg)} GVM need code ${lic.lightCode}. Heavier trailers need code ${lic.heavyCode}. Choose your licence code to apply it.`
       );
     if (!isNum(input.brakedCapacityKg) && !isNum(input.gcmKg))
       notes.push("Add the towing capacity and GCM (Manufacturer ratings) to see the manufacturer limits too.");

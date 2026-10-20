@@ -117,7 +117,7 @@
       "The tow ball mass is counted once: it is part of the trailer's mass, even though the vehicle carries it.",
     ];
     if (m.towballMissing && m.vehicle.source === "estimate")
-      notes.push("Tow ball mass not entered; the vehicle estimate leaves it out.");
+      notes.push("Tow ball mass not entered, so the vehicle estimate leaves it out.");
     const combined = m.combined.kg;
     return result(
       "gcm",
@@ -218,7 +218,7 @@
       parts.push(
         capped
           ? `That is ${(ratio * 100).toFixed(1)} % of the trailer's ${kg(m.trailer.kg)}. The ${pct(g.minFraction)}–${pct(g.maxFraction)} % rule of thumb (${kg(low)} or more) is above the ${kg(max.kg)} maximum, so aim close to ${kg(max.kg)}.`
-          : `That is ${(ratio * 100).toFixed(1)} % of the trailer's ${kg(m.trailer.kg)}; the rule of thumb is ${pct(g.minFraction)}–${pct(g.maxFraction)} % (a rule of thumb, not a legal limit).`
+          : `That is ${(ratio * 100).toFixed(1)} % of the trailer's ${kg(m.trailer.kg)}. The rule of thumb is ${pct(g.minFraction)}–${pct(g.maxFraction)} % (a rule of thumb, not a legal limit).`
       );
       if (capped) notes.push(R.get("guidance-towball-mass").notes[1]);
       if (!inRange) {
@@ -391,7 +391,7 @@
         ruleId: "reg99-licence-codes",
       });
       if (licenceCapDependsOnType(input))
-        notes.push("The licence limit depends on how the vehicle is registered; this uses the stricter case. Choose the vehicle type to be sure.");
+        notes.push("The licence limit depends on how the vehicle is registered. This uses the stricter case. Choose the vehicle type to be sure.");
     }
     const rating = brake === "none" ? input.unbrakedCapacityKg : input.brakedCapacityKg;
     if (isNum(rating)) {

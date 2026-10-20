@@ -148,8 +148,8 @@
     }
 
     const summary =
-      `Trailer brakes needed behind a tare of ${kg(b.tareKg)}: parking brake only up to ${kg(b.noneMaxKg)}; ` +
-      `overrun or service brake up to ${kg(b.overrunMaxKg)}; service brake above that.` +
+      `Trailer brakes needed behind a tare of ${kg(b.tareKg)}: parking brake only up to ${kg(b.noneMaxKg)}, ` +
+      `overrun or service brake up to ${kg(b.overrunMaxKg)} and a service brake above that.` +
       (b.trailerKg !== null ? ` Your trailer: ${kg(b.trailerKg)}${b.overKg ? `, ${kg(b.overKg)} over the limit for ${FITTED[b.fitted]}` : ""}.` : "");
 
     let fix = null;
