@@ -112,6 +112,7 @@ Still open: the questions in `openQuestions` (rules.js), and checking for amendm
 
 - Brand is written **PsyPhin**. Keep paths relative.
 - **Entries are blue boxes with a pencil** (since 2026-10-17, the same as the EV travel cost page): every number field, dropdown and load list box has `--input-bg` / `--input-border`, a bold blue value and the `--pencil` icon; the chosen vehicle type is blue too. Worked-out figures stay plain. The disc drawings keep their pale paper but tint the two boxes blue (`--pencil-dark` on the light background). The intro's "Fill in the blue boxes" line is the key (`.key-input`).
+- **Number boxes are `type="text"` with `inputmode`**, not `type="number"` (since 2026-10-21: on the EV page a tester's iPhone turned "6,2" into 62, because Safari's number boxes mangle a decimal comma, and South African keypads show a comma). `C.parseNumber()` in checks.js reads what was typed (comma or point decimal, spaces or commas for thousands; tested), and app.js steps the value on the up and down arrows (one listener on the document, so load list rows added later are covered too) using the `step`/`min`/`max` attributes. The CSS finds them as `input[inputmode]`; the load list's item-name box is `.load-row input:not([inputmode])`. Keep new number boxes the same way.
 - Commit identity: `74655215+psyphin234@users.noreply.github.com` (set globally on this PC). Never commit a personal email.
 - The repo is public: no personal names or private notes in committed files.
 

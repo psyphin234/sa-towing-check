@@ -69,15 +69,15 @@
 
   // ---------------------------------------------------------------- reading the form
   function num(name) {
-    const v = form.elements[name].value.trim();
-    return v === "" ? null : Number(v);
+    const v = C.parseNumber(form.elements[name].value);
+    return isFinite(v) ? v : null;
   }
 
   function readLoadItems() {
     return Array.from(loadList.querySelectorAll(".load-row")).map((row) => ({
       label: row.querySelector("[data-f=label]").value,
-      qty: Number(row.querySelector("[data-f=qty]").value) || 0,
-      kg: Number(row.querySelector("[data-f=kg]").value) || 0,
+      qty: C.parseNumber(row.querySelector("[data-f=qty]").value) || 0,
+      kg: C.parseNumber(row.querySelector("[data-f=kg]").value) || 0,
     }));
   }
 
@@ -122,7 +122,7 @@
 
   // ---------------------------------------------------------------- load list builder
   function numberInput(field, value, label) {
-    return el("input", { type: "number", inputmode: "decimal", min: "0", step: "any", "data-f": field, value: String(value), "aria-label": label });
+    return el("input", { type: "text", inputmode: "decimal", min: "0", step: "any", "data-f": field, value: String(value), "aria-label": label });
   }
 
   function addLoadRow(presetId, qty) {
@@ -962,6 +962,20 @@
     if (scroll !== false) document.querySelector(".results").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // The number boxes are type="text" (see C.parseNumber), so the up and down arrows step them here.
+  // On the document, because load list rows are added later.
+  document.addEventListener("keydown", (e) => {
+    const input = e.target;
+    if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || !(input instanceof HTMLInputElement) || !input.hasAttribute("inputmode")) return;
+    e.preventDefault();
+    const step = Number(input.getAttribute("step")) || 1;
+    const v = C.parseNumber(input.value);
+    let next = (isFinite(v) ? v : 0) + (e.key === "ArrowUp" ? step : -step);
+    if (input.hasAttribute("min")) next = Math.max(Number(input.getAttribute("min")), next);
+    if (input.hasAttribute("max")) next = Math.min(Number(input.getAttribute("max")), next);
+    input.value = String(Math.round(next * 100) / 100);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
   form.addEventListener("input", render);
   form.addEventListener("change", render);
   form.addEventListener("reset", (e) => {

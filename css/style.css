@@ -517,7 +517,7 @@ h3 {
   color: var(--text-muted);
 }
 
-input[type="number"],
+input[inputmode],
 select {
   width: 100%;
   font: inherit;
@@ -531,15 +531,15 @@ select {
   min-height: 44px;
 }
 
-input[type="number"] {
+input[inputmode] {
   padding-right: 30px;
   background: var(--input-bg) var(--pencil) no-repeat right 9px center / 14px;
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
+input[inputmode]::-webkit-outer-spin-button,
+input[inputmode]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
@@ -555,7 +555,7 @@ select option {
   font-weight: 400;
 }
 
-input[type="number"]:focus,
+input[inputmode]:focus,
 select:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -758,7 +758,7 @@ select:focus {
   border-radius: 10px;
 }
 
-.load-row input[type="text"] {
+.load-row input:not([inputmode]) {
   grid-column: 1 / -1;
 }
 
@@ -3386,18 +3386,18 @@ select:focus {
   }
 
   /* -------- entries glow when they have focus */
-  input[type="number"],
+  input[inputmode],
   select,
   .load-row input {
     transition: border-color 0.2s, box-shadow 0.25s;
   }
 
-  input[type="number"]:hover,
+  input[inputmode]:hover,
   select:hover {
     border-color: var(--accent);
   }
 
-  input[type="number"]:focus,
+  input[inputmode]:focus,
   select:focus,
   .load-row input:focus {
     outline: 1px solid var(--accent);

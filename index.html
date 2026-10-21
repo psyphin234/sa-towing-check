@@ -93,8 +93,8 @@
             <span class="disc-caption">Vehicle licence disc</span>
             <span class="disc-skip">Licence no. · Make · VIN</span>
             <div class="disc-fields">
-              <label class="disc-field"><span class="disc-label">Tare</span><input type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2100" data-mirror="tareKg"><span class="disc-unit">kg</span></label>
-              <label class="disc-field"><span class="disc-label">GVM</span><input type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 3100" data-mirror="gvmKg"><span class="disc-unit">kg</span></label>
+              <label class="disc-field"><span class="disc-label">Tare</span><input type="text" inputmode="numeric" min="0" step="1" placeholder="e.g. 2100" data-mirror="tareKg"><span class="disc-unit">kg</span></label>
+              <label class="disc-field"><span class="disc-label">GVM</span><input type="text" inputmode="numeric" min="0" step="1" placeholder="e.g. 3100" data-mirror="gvmKg"><span class="disc-unit">kg</span></label>
             </div>
             <span class="disc-skip">Test date · Persons</span>
           </div>
@@ -116,8 +116,8 @@
             <span class="disc-caption">Trailer licence disc</span>
             <span class="disc-skip">Licence no. · Make · VIN</span>
             <div class="disc-fields">
-              <label class="disc-field"><span class="disc-label">Tare</span><input type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 1500" data-mirror="trailerTareKg"><span class="disc-unit">kg</span></label>
-              <label class="disc-field"><span class="disc-label">GVM</span><input type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2000" data-mirror="trailer1GvmKg"><span class="disc-unit">kg</span></label>
+              <label class="disc-field"><span class="disc-label">Tare</span><input type="text" inputmode="numeric" min="0" step="1" placeholder="e.g. 1500" data-mirror="trailerTareKg"><span class="disc-unit">kg</span></label>
+              <label class="disc-field"><span class="disc-label">GVM</span><input type="text" inputmode="numeric" min="0" step="1" placeholder="e.g. 2000" data-mirror="trailer1GvmKg"><span class="disc-unit">kg</span></label>
             </div>
             <span class="disc-skip">Test date</span>
           </div>
@@ -165,13 +165,13 @@
 
             <div class="field">
               <label for="tareKg">Tare</label>
-              <div class="unit-input"><input id="tareKg" name="tareKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2100"><span>kg</span></div>
+              <div class="unit-input"><input id="tareKg" name="tareKg" type="text" inputmode="numeric" min="0" step="1" placeholder="e.g. 2100"><span>kg</span></div>
               <p class="hint">Printed on your licence disc and registration certificate.</p>
             </div>
 
             <div class="field">
               <label for="gvmKg">GVM</label>
-              <div class="unit-input"><input id="gvmKg" name="gvmKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 3100"><span>kg</span></div>
+              <div class="unit-input"><input id="gvmKg" name="gvmKg" type="text" inputmode="numeric" min="0" step="1" placeholder="e.g. 3100"><span>kg</span></div>
               <p class="hint">Maximum laden mass from the manufacturer: compliance plate or owner's manual.</p>
             </div>
 
@@ -216,13 +216,13 @@
 
             <div class="field" data-trailer="1">
               <label for="trailer1GvmKg">Trailer plated GVM</label>
-              <div class="unit-input"><input id="trailer1GvmKg" name="trailer1GvmKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 2000"><span>kg</span></div>
+              <div class="unit-input"><input id="trailer1GvmKg" name="trailer1GvmKg" type="text" inputmode="numeric" min="0" step="1" placeholder="e.g. 2000"><span>kg</span></div>
               <p class="hint">From the trailer's licence disc or compliance plate, not what it weighs today.</p>
             </div>
 
             <div class="field" data-trailer="2" hidden>
               <label for="trailer2GvmKg">Second trailer plated GVM</label>
-              <div class="unit-input"><input id="trailer2GvmKg" name="trailer2GvmKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+              <div class="unit-input"><input id="trailer2GvmKg" name="trailer2GvmKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
             </div>
 
             <div class="field" data-trailer="1">
@@ -242,18 +242,18 @@
 
             <div class="field" data-trailer="1">
               <label for="towballKg">Tow ball (nose) mass</label>
-              <div class="unit-input"><input id="towballKg" name="towballKg" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 90"><span>kg</span></div>
+              <div class="unit-input"><input id="towballKg" name="towballKg" type="text" inputmode="numeric" min="0" step="1" placeholder="e.g. 90"><span>kg</span></div>
               <p class="hint">Weigh it with a tow ball scale, with the trailer loaded for the trip.</p>
             </div>
 
             <div class="field-row" data-trailer="1">
               <div class="field">
                 <label for="trailerTareKg">Trailer tare</label>
-                <div class="unit-input"><input id="trailerTareKg" name="trailerTareKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                <div class="unit-input"><input id="trailerTareKg" name="trailerTareKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
               </div>
               <div class="field">
                 <label for="trailerActualKg">Trailer actual mass</label>
-                <div class="unit-input"><input id="trailerActualKg" name="trailerActualKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                <div class="unit-input"><input id="trailerActualKg" name="trailerActualKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
               </div>
             </div>
             <p class="hint field-row-hint" data-trailer="1">Optional. Actual mass is what the loaded trailer weighs (all trailers together). Without it, manufacturer checks use the plated GVM.</p>
@@ -264,30 +264,30 @@
             <p class="hint fieldset-hint">Optional. From the owner's manual, compliance plate or towbar plate.</p>
             <div class="field">
               <label for="gcmKg">GCM (vehicle + trailer)</label>
-              <div class="unit-input"><input id="gcmKg" name="gcmKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+              <div class="unit-input"><input id="gcmKg" name="gcmKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
             </div>
             <div class="field-row">
               <div class="field">
                 <label for="brakedCapacityKg">Towing capacity, braked</label>
-                <div class="unit-input"><input id="brakedCapacityKg" name="brakedCapacityKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                <div class="unit-input"><input id="brakedCapacityKg" name="brakedCapacityKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
               </div>
               <div class="field">
                 <label for="unbrakedCapacityKg">Towing capacity, unbraked</label>
-                <div class="unit-input"><input id="unbrakedCapacityKg" name="unbrakedCapacityKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                <div class="unit-input"><input id="unbrakedCapacityKg" name="unbrakedCapacityKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
               </div>
             </div>
             <div class="field" data-modes="check compare">
               <label for="maxTowballKg">Maximum tow ball mass</label>
-              <div class="unit-input"><input id="maxTowballKg" name="maxTowballKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+              <div class="unit-input"><input id="maxTowballKg" name="maxTowballKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
             </div>
             <div class="field-row" data-modes="check compare">
               <div class="field">
                 <label for="frontAxleRatingKg">Front axle rating</label>
-                <div class="unit-input"><input id="frontAxleRatingKg" name="frontAxleRatingKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                <div class="unit-input"><input id="frontAxleRatingKg" name="frontAxleRatingKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
               </div>
               <div class="field">
                 <label for="rearAxleRatingKg">Rear axle rating</label>
-                <div class="unit-input"><input id="rearAxleRatingKg" name="rearAxleRatingKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                <div class="unit-input"><input id="rearAxleRatingKg" name="rearAxleRatingKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
               </div>
             </div>
           </fieldset>
@@ -312,25 +312,25 @@
               <div class="field-row">
                 <div class="field">
                   <label for="wbFrontAxleKg">Front axle</label>
-                  <div class="unit-input"><input id="wbFrontAxleKg" name="wbFrontAxleKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                  <div class="unit-input"><input id="wbFrontAxleKg" name="wbFrontAxleKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
                 </div>
                 <div class="field">
                   <label for="wbRearAxleKg">Rear axle</label>
-                  <div class="unit-input"><input id="wbRearAxleKg" name="wbRearAxleKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                  <div class="unit-input"><input id="wbRearAxleKg" name="wbRearAxleKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
                 </div>
               </div>
               <div class="field" data-trailer="1">
                 <label for="wbTrailerAxlesKg">Trailer axle(s)</label>
-                <div class="unit-input"><input id="wbTrailerAxlesKg" name="wbTrailerAxlesKg" type="number" inputmode="numeric" min="0" step="1"><span>kg</span></div>
+                <div class="unit-input"><input id="wbTrailerAxlesKg" name="wbTrailerAxlesKg" type="text" inputmode="numeric" min="0" step="1"><span>kg</span></div>
               </div>
               <div class="field-row">
                 <div class="field">
                   <label for="wheelbaseMm">Wheelbase</label>
-                  <div class="unit-input"><input id="wheelbaseMm" name="wheelbaseMm" type="number" inputmode="numeric" min="0" step="1"><span>mm</span></div>
+                  <div class="unit-input"><input id="wheelbaseMm" name="wheelbaseMm" type="text" inputmode="numeric" min="0" step="1"><span>mm</span></div>
                 </div>
                 <div class="field">
                   <label for="rearOverhangMm">Rear axle to tow ball</label>
-                  <div class="unit-input"><input id="rearOverhangMm" name="rearOverhangMm" type="number" inputmode="numeric" min="0" step="1"><span>mm</span></div>
+                  <div class="unit-input"><input id="rearOverhangMm" name="rearOverhangMm" type="text" inputmode="numeric" min="0" step="1"><span>mm</span></div>
                 </div>
               </div>
             </details>
