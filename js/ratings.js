@@ -168,12 +168,14 @@
     return makerKg === null ? null : { kg: makerKg, source: "maker", makerKg };
   }
 
-  // Diagram point for the tow ball: over the recommended 100 kg is amber, not red.
+  // Diagram point for the tow ball. Against the recommended 100 kg: under it is
+  // green, right on it or over it amber, and only over the maker's rating red.
   function towballPoint(point, towballKg, input) {
     const max = towballMax(input);
     const recommended = max && max.source === "legal";
     const p = point(towballKg, max ? max.kg : null, "entered", recommended ? "recommended maximum" : "maximum");
-    if (recommended && p.status === "fail" && !(max.makerKg !== null && towballKg > max.makerKg)) p.status = "warn";
+    if (recommended && isNum(towballKg))
+      p.status = max.makerKg !== null && towballKg > max.makerKg ? "fail" : towballKg >= max.kg ? "warn" : "pass";
     return p;
   }
 
@@ -195,6 +197,8 @@
       const recommended = max.source === "legal";
       parts.push(`${kg(m.towballKg)} against the ${recommended ? "recommended " : ""}maximum of ${kg(max.kg)}.`);
       if (m.towballKg > max.kg) status = recommended && !(max.makerKg !== null && m.towballKg > max.makerKg) ? "warn" : "fail";
+      // right on the recommended 100 kg is amber too (owner's request); anything under is green
+      else if (recommended && m.towballKg === max.kg) status = "warn";
       if (recommended) {
         ids.push("vc8026-towball-limit");
         notes.push(

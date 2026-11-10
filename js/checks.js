@@ -521,6 +521,19 @@
         ),
         { statusLabel: "Under recommended" }
       );
+    // Right on the maximum is amber (owner's request): any more load at the front takes it over.
+    if (tb === p.maxKg)
+      return Object.assign(
+        result(
+          "towball-legal",
+          title,
+          "warn",
+          `${kg(tb)} on the tow ball: right on the recommended ${kg(p.maxKg)} maximum. A little more load at the front of the trailer takes it over.`,
+          ids,
+          [grey]
+        ),
+        { statusLabel: "At recommended maximum" }
+      );
     return Object.assign(result("towball-legal", title, "pass", `${kg(tb)} on the tow ball: within the recommended ${range}.`, ids), {
       statusLabel: "Within recommended",
     });

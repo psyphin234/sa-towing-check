@@ -466,6 +466,7 @@
     eq(M.towingCapacityCheck(exampleRig({ trailers: [] })), null);
   });
   test("tow ball: 100 kg recommended for a light trailer, even with a 350 kg towbar", () => {
+    eq(M.towballCheck(exampleRig({ towballKg: 99 })).status, "pass", "under 100 kg: green");
     const over = M.towballCheck(exampleRig()); // 200 kg on the ball
     eq(over.status, "warn", "over the recommended 100 kg: amber, not red");
     includes(over.reason, "recommended maximum of 100");
@@ -473,7 +474,7 @@
     eq(M.towballCheck(exampleRig({ towballKg: 380 })).status, "fail", "over the towbar's own 350 kg: red");
     eq(M.towballCheck(exampleRig({ towballKg: 90, maxTowballKg: 80 })).status, "fail", "over a lower maker rating: red");
     const atCap = M.towballCheck(exampleRig({ towballKg: 100 })); // 4 % of a 2 500 kg caravan
-    eq(atCap.status, "pass", "rule of thumb capped at 100 kg");
+    eq(atCap.status, "warn", "right on the recommended 100 kg: amber");
     includes(atCap.reason, "aim close to 100");
     eq(M.towballCheck(exampleRig({ towballKg: null })).status, "incomplete");
   });
@@ -494,8 +495,12 @@
     eq(c({}).status, "warn", "200 kg");
     eq(c({}).statusLabel, "Over recommended");
     includes(c({}).notes.join(" "), "grey area");
-    eq(c({ towballKg: 100 }).status, "pass");
-    eq(c({ towballKg: 100 }).statusLabel, "Within recommended");
+    eq(c({ towballKg: 100 }).status, "warn", "right on 100 kg: amber");
+    eq(c({ towballKg: 100 }).statusLabel, "At recommended maximum");
+    eq(c({ towballKg: 99 }).status, "pass", "under 100 kg: green");
+    eq(c({ towballKg: 99 }).statusLabel, "Within recommended");
+    eq(M.rigDiagram(exampleRig({ towballKg: 96 })).towball.status, "pass", "diagram: 96 kg green, not near-limit amber");
+    eq(M.rigDiagram(exampleRig({ towballKg: 100 })).towball.status, "warn", "diagram: 100 kg amber");
     eq(c({ towballKg: 20 }).status, "warn", "under 25 kg");
     eq(c({ towballKg: 20 }).statusLabel, "Under recommended");
     eq(c({ towballKg: null }).status, "info");

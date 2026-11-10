@@ -665,9 +665,8 @@
   // value. The SVG beside it is for print. The colours are lenient on purpose
   // (owner's request): a hard limit (GVM, GCM, axle ratings, the trailer's
   // plated GVM) stays green to 85 %, turns orange by 90 % and red from 94 %;
-  // the tow ball is green up to its maximum (sitting right on the recommended
-  // 100 kg is what you aim for), orange over the recommended maximum and red
-  // over the maker's rating, as its check says.
+  // the tow ball follows its check: green under the recommended 100 kg, orange
+  // right on it or over it, red over the maker's rating.
   var GREEN = [46, 230, 166], ORANGE = [255, 166, 64], RED = [255, 93, 115];
   var NEUTRAL = [76, 201, 255], NONE = [120, 140, 180];
   var SHORT = { GVM: "GVM", GCM: "GCM", rating: "rating", "recommended maximum": "max", maximum: "max", "plated GVM": "GVM" };
@@ -689,7 +688,7 @@
     if (!p || p.kg === null) return { c: p && p.changeKg !== undefined ? NEUTRAL : NONE, f: null, pulse: false };
     if (p.limit === null) return { c: NEUTRAL, f: null, pulse: false };
     var f = p.kg / p.limit, c;
-    if (kind === "towball") c = p.status === "fail" ? RED : f > 1 ? ORANGE : GREEN;
+    if (kind === "towball") c = p.status === "fail" ? RED : p.status === "warn" ? ORANGE : GREEN;
     else if (f <= 0.85) c = GREEN;
     else if (f <= 0.9) c = mix(GREEN, ORANGE, (f - 0.85) / 0.05);
     else if (f < 0.94) c = mix(ORANGE, RED, (f - 0.9) / 0.04);
@@ -697,7 +696,8 @@
     return { c: c, f: f, pulse: kind === "towball" ? p.status === "fail" : f > 1 };
   }
 
-  var rigLive = (function () {
+  // The live drawing on its own canvas; it only animates while it's on screen.
+  function makeRigLive(label) {
     var canvas = null, ctx = null, sc = null, data = null, shown = {};
     var LIVE_CI = { vehicle: 0, towball: 1, trailer: 2, front: 3, rear: 4, trailerAxles: 5 };
     var REAR_TYRES = [[232, -49], [232, 49], [500, -57], [500, 57]];
@@ -707,8 +707,10 @@
     function setUp() {
       canvas = document.createElement("canvas");
       canvas.className = "rig-live";
-      canvas.setAttribute("role", "img");
-      canvas.setAttribute("aria-label", "Side view of the rig with the mass on each axle, the tow ball, the vehicle, the trailer and the whole rig, coloured by how close each is to its limit. The same figures are in the table below.");
+      if (label) {
+        canvas.setAttribute("role", "img");
+        canvas.setAttribute("aria-label", label);
+      } else canvas.setAttribute("aria-hidden", "true");
       ctx = canvas.getContext("2d");
       sc = Scene(ctx);
       if ("ResizeObserver" in window) new ResizeObserver(function () { if (resize()) still(); }).observe(canvas);
@@ -954,8 +956,9 @@
     }
 
     return { show: show };
-  })();
+  }
 
+  var rigLive = makeRigLive("Side view of the rig with the mass on each axle, the tow ball, the vehicle, the trailer and the whole rig, coloured by how close each is to its limit. The same figures are in the table below.");
   window.TOWING_RIGFX = { show: rigLive.show };
 
   function start() { setUpReveal(); setUpHologram(); }
