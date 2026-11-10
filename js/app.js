@@ -246,8 +246,18 @@
       chart ? window.TOWING_CHARTS.renderBrakeChart(chart, { fix: true }) : null,
       check.meter && !opts.noMeter ? renderMeter(check.meter, check.status) : null,
       notesToggle(check.id, check.notes),
-      ruleLinks(rules)
+      opts.noSources ? null : ruleLinks(rules)
     );
+  }
+
+  // A panel's citations in one list at its foot, a line per check, so the
+  // cards themselves stay short. Every result still cites its rules.
+  function panelSources(checks) {
+    const rows = checks
+      .filter((c) => c.ruleIds.length)
+      .map((c) => el("li", null, el("span", { class: "panel-sources-check" }, c.title), ruleLinks(c.ruleIds.map((id) => R.get(id)))));
+    if (!rows.length) return null;
+    return el("div", { class: "panel-sources" }, el("h3", null, "Sources"), el("ul", null, rows));
   }
 
   const BRAKE_NAME = { none: "no brakes", overrun: "overrun brakes", service: "a service brake" };
@@ -698,7 +708,7 @@
         el("span", null, OVERALL_TEXT[s.overall])
       ),
       tiles.length ? el("div", { class: "figures" }, tiles) : null,
-      el("ul", { class: "checks" }, s.checks.map((c) => renderCheck(c, LEGAL_STATUS_LABEL, { brakeChart: C.brakeChart(s.input) }))),
+      el("ul", { class: "checks" }, s.checks.map((c) => renderCheck(c, LEGAL_STATUS_LABEL, { brakeChart: C.brakeChart(s.input), noSources: true }))),
       el(
         "div",
         { class: "advanced-note" + (specific ? " advanced-note--flag" : "") },
@@ -707,7 +717,8 @@
           ? el("ul", null, s.reasons.map((r) => el("li", null, r.text)))
           : el("p", null, "This check uses only your licence discs. The advanced check adds what you load, your vehicle's own towing limits and weighbridge readings."),
         el("button", { type: "button", class: "button button--primary", "data-open-advanced": "" }, "Open the advanced check")
-      )
+      ),
+      panelSources(s.checks)
     );
     return s;
   }
@@ -821,19 +832,23 @@
     const simple = renderSimple();
     renderTow(input);
     renderCompare(input);
-    document.getElementById("rig-body").replaceChildren(window.TOWING_DIAGRAM.renderRigDiagram(M.rigDiagram(input)));
+    // the simple check draws the rig from the discs alone
+    const rigInput = mode === "simple" ? window.TOWING_MODES.simpleInput(simpleRaw()) : input;
+    document.getElementById("rig-body").replaceChildren(window.TOWING_DIAGRAM.renderRigDiagram(M.rigDiagram(rigInput), { simple: mode === "simple" }));
     renderPrintSheet(mode === "simple" && simple.ready ? simple.input : input);
 
     const legal = C.runLegalChecks(input);
     const brakeChart = C.brakeChart(input);
-    legalList.replaceChildren(...legal.checks.map((c) => renderCheck(c, LEGAL_STATUS_LABEL, { id: "law-" + c.id, brakeChart })));
+    legalList.replaceChildren(...legal.checks.map((c) => renderCheck(c, LEGAL_STATUS_LABEL, { id: "law-" + c.id, brakeChart, noSources: true })));
+    document.getElementById("legal-sources").replaceChildren(...[panelSources(legal.checks)].filter(Boolean));
 
     const maker = M.runMakerChecks(input);
     const budget = M.weightBudget(input);
     // the budget bars replace the payload and GCM cards' meters
     const drawn = { payload: Boolean(budget && budget.vehicle), gcm: Boolean(budget && budget.combination) };
     renderMakerSummary(maker.checks);
-    makerList.replaceChildren(...maker.checks.map((c) => renderCheck(c, STATUS_LABEL, { id: "maker-" + c.id, noMeter: drawn[c.id] })));
+    makerList.replaceChildren(...maker.checks.map((c) => renderCheck(c, STATUS_LABEL, { id: "maker-" + c.id, noMeter: drawn[c.id], noSources: true })));
+    document.getElementById("maker-sources").replaceChildren(...[panelSources(maker.checks)].filter(Boolean));
 
     const status = (id) => (maker.checks.find((c) => c.id === id) || {}).status;
     budgetBody.replaceChildren(...[].concat(window.TOWING_CHARTS.renderWeightBudget(budget, { payload: status("payload"), gcm: status("gcm") })));

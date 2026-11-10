@@ -148,8 +148,12 @@
     );
   }
 
-  function renderRigDiagram(d) {
-    if (!d.hasData) return el("p", { class: "muted" }, "Enter the tare (or weighbridge axle readings) to draw your rig.");
+  // opts.simple: the simple check, which only has the two discs, so the
+  // drawing stands alone (no table, and its own note).
+  function renderRigDiagram(d, opts) {
+    const simple = Boolean(opts && opts.simple);
+    // With nothing entered yet the rig is still drawn, with dashes for figures.
+    const empty = !d.hasData;
     const rows = [
       row("Front axle", d.front),
       row("Rear axle", d.rear),
@@ -160,9 +164,16 @@
       row("Vehicle + trailer", d.combined),
     ];
     const notes = [];
-    if (d.front.kg === null || d.rear.kg === null)
+    if (simple) {
+      notes.push(
+        empty
+          ? "Enter the tare from your vehicle's licence disc to see your figures on the rig."
+          : "Shown with the vehicle empty, at the tare on its disc" + (d.trailerCount ? ", and the trailer at its plated GVM" : "") + ". The advanced check adds your load, the tow ball and axle readings."
+      );
+    } else if (empty) notes.push("Enter the tare (or weighbridge axle readings) to see your figures on the rig.");
+    else if (d.front.kg === null || d.rear.kg === null)
       notes.push("Axle loads need weighbridge readings (with the trailer hitched). Enter them under Weighbridge and measurements.");
-    if (d.lever) notes.push("The tow ball's effect on the axles is estimated from the wheelbase and the distance from the rear axle to the tow ball.");
+    if (d.lever && !simple) notes.push("The tow ball's effect on the axles is estimated from the wheelbase and the distance from the rear axle to the tow ball.");
     // On screen, fx.js draws the rig live on a canvas (the same one each time);
     // the SVG is then only for print.
     const live = root.TOWING_RIGFX ? root.TOWING_RIGFX.show(d) : null;
@@ -170,7 +181,7 @@
       "div",
       null,
       el("figure", { class: live ? "rig-figure rig-figure--live" : "rig-figure" }, live, svgFor(d)),
-      el(
+      empty || simple ? null : el(
         "div",
         { class: "table-wrap" },
         el(

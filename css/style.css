@@ -1517,6 +1517,52 @@ select:focus {
   font-weight: 600;
 }
 
+/* a panel's citations, gathered at its foot: one line per check */
+.panel-sources {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.panel-sources h3 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.panel-sources > ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.panel-sources > ul > li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  align-items: baseline;
+  padding: 3px 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.panel-sources-check {
+  flex: 0 0 9.5em;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.panel-sources .rule-links {
+  flex: 1 1 14em;
+  margin: 0;
+}
+
+.panel-sources .rule-links-label {
+  display: none;
+}
+
 .rule-ref {
   font-weight: 400;
   white-space: nowrap;

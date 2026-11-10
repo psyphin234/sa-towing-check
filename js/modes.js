@@ -289,7 +289,7 @@
     return { ready: true, input, checks, overall: C.worstStatus(checks), figures, reasons, towing };
   }
 
-  const api = { whatCanITow, compareBodyTypes, simpleCheck, speedThresholds, licenceClass, summarise, BRAKES };
+  const api = { whatCanITow, compareBodyTypes, simpleCheck, simpleInput, speedThresholds, licenceClass, summarise, BRAKES };
   if (isNode) module.exports = api;
   else root.TOWING_MODES = api;
 })(typeof window !== "undefined" ? window : globalThis);
