@@ -1,8 +1,9 @@
 /* Visual effects, decoration only (nothing here touches the checks):
    - the rig hologram in the checker's header (canvas.hero-fx): a bakkie and
-     caravan drawn in light, driving along a moving road while a scan beam sweeps
-     over them and tags the front axle, rear axle, tow ball and trailer axle as
-     it passes. It shows no figures, so it can't be mistaken for a result;
+     caravan as a 3D wireframe in light, turning slowly as it drives along a
+     road in perspective, while a scan beam sweeps down it and tags the front
+     axle, rear axle, tow ball and trailer axle as it passes. It shows no
+     figures, so it can't be mistaken for a result;
    - "Your rig at a glance" on screen (window.TOWING_RIGFX, used by diagram.js):
      the same rig in light, with the user's own figures coloured by how close
      each is to its limit (this file loads before app.js for that);
@@ -140,19 +141,6 @@
     }
   }
 
-  function towbar(ctx) {
-    ctx.moveTo(302, -36); ctx.lineTo(330, -36);
-    ctx.moveTo(338, -40); ctx.arc(334, -40, 4, 0, Math.PI * 2);
-  }
-
-  function hitch(ctx) {
-    // drawbar and jockey wheel
-    ctx.moveTo(334, -40); ctx.lineTo(392, -34);
-    ctx.moveTo(334, -40); ctx.lineTo(392, -48);
-    ctx.moveTo(372, -40); ctx.lineTo(372, -15);
-    ctx.moveTo(377, -10); ctx.arc(372, -10, 5, 0, Math.PI * 2);
-  }
-
   function caravanDetails(ctx) {
     // window, door, stripe
     ctx.moveTo(424, -118); ctx.lineTo(474, -118); ctx.lineTo(474, -92); ctx.lineTo(424, -92); ctx.closePath();
@@ -160,26 +148,330 @@
     ctx.moveTo(392, -62); ctx.lineTo(600, -62);
   }
 
-  function details(ctx) {
-    vehicleDetails(ctx, "goodsVehicle");
-    towbar(ctx);
-    hitch(ctx);
-    caravanDetails(ctx);
+  // ------------------------------------------------------------ the rig in 3D
+  // Both drawings show the rig as a wireframe with depth: each side-view shape
+  // above is recorded as points, given a width, and seen through a camera that
+  // can turn (yaw) and look down a little (pitch). Near side is z < 0.
+  var TAU = Math.PI * 2;
+  var HALF_WIDTH = { goodsVehicle: 52, motorCar: 50, motorHome: 58 }, CARAVAN_HALF = 60;
+
+  // Stands in for a canvas context and keeps the points of what's drawn on it.
+  function Rec() { this.lines = []; this.cur = null; }
+  Rec.prototype.add = function (x, y, corner) {
+    var p = this.cur.p, l = p[p.length - 1];
+    if (l && Math.abs(l[0] - x) < 0.01 && Math.abs(l[1] - y) < 0.01) { if (corner) l[2] = 1; return; }
+    p.push([x, y, corner ? 1 : 0]);
+  };
+  Rec.prototype.moveTo = function (x, y) {
+    this.cur = { p: [], closed: false };
+    this.lines.push(this.cur);
+    this.add(x, y, true);
+  };
+  Rec.prototype.lineTo = function (x, y) { this.add(x, y, true); };
+  Rec.prototype.arc = function (cx, cy, r, a0, a1, ccw) {
+    var sweep = a1 - a0;
+    if (ccw && sweep >= 0) sweep -= TAU;
+    var n = Math.max(6, Math.ceil(Math.abs(sweep) / (Math.PI / 9)));
+    for (var i = 0; i <= n; i++) {
+      var a = a0 + (sweep * i) / n;
+      this.add(cx + Math.cos(a) * r, cy + Math.sin(a) * r, i === 0 || i === n);
+    }
+  };
+  Rec.prototype.quadraticCurveTo = function (cx, cy, x, y) {
+    var p = this.cur.p, from = p[p.length - 1];
+    for (var i = 1; i <= 6; i++) {
+      var t = i / 6, u = 1 - t;
+      this.add(u * u * from[0] + 2 * u * t * cx + t * t * x, u * u * from[1] + 2 * u * t * cy + t * t * y, i === 6);
+    }
+  };
+  Rec.prototype.closePath = function () { this.cur.closed = true; };
+
+  function record(fn, arg) {
+    var r = new Rec();
+    fn(r, arg);
+    return r.lines;
   }
 
-  function wheel(ctx, w, spin) {
-    var cy = -w.r;
-    ctx.moveTo(w.x + w.r, cy); ctx.arc(w.x, cy, w.r, 0, Math.PI * 2);
-    ctx.moveTo(w.x + w.r * 0.36, cy); ctx.arc(w.x, cy, w.r * 0.36, 0, Math.PI * 2);
-    for (var k = 0; k < 5; k++) {
-      var a = spin + (k * Math.PI * 2) / 5;
-      ctx.moveTo(w.x + Math.cos(a) * w.r * 0.36, cy + Math.sin(a) * w.r * 0.36);
-      ctx.lineTo(w.x + Math.cos(a) * w.r * 0.86, cy + Math.sin(a) * w.r * 0.86);
+  var MODELS = {};
+  function modelFor(type) {
+    if (!MODELS[type]) {
+      MODELS[type] = type === "caravan"
+        ? { outline: record(caravan), details: record(caravanDetails) }
+        : { outline: record(BODIES[type]), details: record(vehicleDetails, type) };
+    }
+    return MODELS[type];
+  }
+
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+  // The road's bumps under one wheel at a time: a ripple, and a pothole every
+  // few seconds that the front, rear and trailer wheels each hit in turn.
+  function bump(t) {
+    var u = (((t % 5.5) + 5.5) % 5.5) - 0.6;
+    return 0.8 * Math.sin(t * 6.1) + 0.5 * Math.sin(t * 9.7 + 1) + 7 * Math.exp(-(u * u) / 0.012);
+  }
+
+  function makeMotes(n) {
+    var list = [];
+    for (var i = 0; i < n; i++) list.push({ p: Math.random(), a: Math.random(), b: Math.random(), v: 0.25 + Math.random() * 0.5 });
+    return list;
+  }
+
+  // A camera and a pile of line segments. Segments are sorted into buckets by
+  // colour and brightness, so a frame is a few dozen strokes however many lines
+  // the rig has; each bucket is stroked wide and faint, then thin and bright,
+  // which glows without the cost of a canvas shadow.
+  function Scene(ctx) {
+    var centre = 0, sinYaw = 0, cosYaw = 1, sinPitch = 0, cosPitch = 1, D = 1600;
+    var pivot = 0, lift = 0, tilt = 0;
+    var buckets = {};
+    var self = { X: 0, Y: 0, lit: null, hot: null, palette: [] };
+
+    self.camera = function (c, yaw, pitch) {
+      centre = c;
+      sinYaw = Math.sin(yaw); cosYaw = Math.cos(yaw);
+      sinPitch = Math.sin(pitch); cosPitch = Math.cos(pitch);
+    };
+
+    // What follows rides on a body that has risen by `rise` at x = `at` and
+    // leans by `lean` (suspension). body() with nothing is the ground.
+    self.body = function (at, rise, lean) { pivot = at || 0; lift = rise || 0; tilt = lean || 0; };
+
+    self.pt = function (x, y, z) {
+      y += lift + (x - pivot) * tilt;
+      var X = x - centre;
+      var X1 = X * cosYaw + z * sinYaw, Z1 = -X * sinYaw + z * cosYaw;
+      var Y1 = y * cosPitch - Z1 * sinPitch, Z2 = y * sinPitch + Z1 * cosPitch;
+      var k = D / (D + Z2);
+      self.X = centre + X1 * k;
+      self.Y = Y1 * k;
+    };
+
+    self.seg = function (x1, y1, z1, x2, y2, z2, ci, a) {
+      var mid = (x1 + x2) / 2, hq = 0;
+      if (self.lit) a *= self.lit(mid);
+      if (self.hot) hq = Math.round(self.hot(mid) * 2);
+      var aq = Math.min(10, Math.round(a * 10));
+      if (aq < 1) return;
+      var key = ci * 100 + aq * 3 + hq;
+      var b = buckets[key] || (buckets[key] = { ci: ci, a: aq / 10, h: hq / 2, pts: [], n: 0 });
+      self.pt(x1, y1, z1); b.pts[b.n++] = self.X; b.pts[b.n++] = self.Y;
+      self.pt(x2, y2, z2); b.pts[b.n++] = self.X; b.pts[b.n++] = self.Y;
+    };
+
+    self.poly = function (line, z, ci, a) {
+      var p = line.p, n = p.length, m = line.closed ? n : n - 1;
+      for (var i = 0; i < m; i++) {
+        var q = p[(i + 1) % n];
+        self.seg(p[i][0], p[i][1], z, q[0], q[1], z, ci, a);
+      }
+    };
+
+    self.polys = function (lines, z, ci, a) {
+      lines.forEach(function (line) { self.poly(line, z, ci, a); });
+    };
+
+    // A side-view outline given width: near side, far side, and an edge across
+    // at every corner.
+    self.extrude = function (lines, hw, ci, near, far, across) {
+      lines.forEach(function (line) {
+        self.poly(line, -hw, ci, near);
+        self.poly(line, hw, ci, far);
+        line.p.forEach(function (p) {
+          if (p[2]) self.seg(p[0], p[1], -hw, p[0], p[1], hw, ci, across);
+        });
+      });
+    };
+
+    self.ring = function (x, y, z, r, n, ci, a) {
+      for (var i = 0; i < n; i++) {
+        var a0 = (i / n) * TAU, a1 = ((i + 1) / n) * TAU;
+        self.seg(x + Math.cos(a0) * r, y + Math.sin(a0) * r, z, x + Math.cos(a1) * r, y + Math.sin(a1) * r, z, ci, a);
+      }
+    };
+
+    // A wheel standing on the ground: both tyre walls, the hub, spokes and
+    // tread bars that turn with it.
+    self.wheel = function (x, r, z, zin, rise, spin, ci, a) {
+      var cy = -r - rise;
+      self.ring(x, cy, z, r, 22, ci, a);
+      self.ring(x, cy, zin, r, 22, ci, a * 0.4);
+      self.ring(x, cy, z, r * 0.36, 11, ci, a);
+      for (var k = 0; k < 5; k++) {
+        var ang = spin + (k * TAU) / 5, c = Math.cos(ang), s = Math.sin(ang);
+        self.seg(x + c * r * 0.36, cy + s * r * 0.36, z, x + c * r * 0.86, cy + s * r * 0.86, z, ci, a * 0.9);
+        self.seg(x + c * r, cy + s * r, z, x + c * r, cy + s * r, zin, ci, a * 0.6);
+      }
+    };
+
+    // Puts one outline on the canvas as a path (for fills).
+    self.trace = function (line, z) {
+      line.p.forEach(function (p, i) {
+        self.pt(p[0], p[1], z);
+        if (i) ctx.lineTo(self.X, self.Y); else ctx.moveTo(self.X, self.Y);
+      });
+      ctx.closePath();
+    };
+
+    self.flush = function (s, width) {
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      Object.keys(buckets).forEach(function (key) {
+        var b = buckets[key];
+        if (!b.n) return;
+        var c = mix(self.palette[b.ci] || NEUTRAL, [255, 255, 255], b.h * 0.7);
+        ctx.beginPath();
+        for (var i = 0; i < b.n; i += 4) { ctx.moveTo(b.pts[i], b.pts[i + 1]); ctx.lineTo(b.pts[i + 2], b.pts[i + 3]); }
+        ctx.strokeStyle = rgba(c, b.a * (0.16 + b.h * 0.14));
+        ctx.lineWidth = (width * (4.5 + b.h * 3)) / s;
+        ctx.stroke();
+        ctx.strokeStyle = rgba(c, b.a);
+        ctx.lineWidth = (width * (1 + b.h * 0.3)) / s;
+        ctx.stroke();
+        b.n = 0;
+      });
+    };
+
+    return self;
+  }
+
+  // The road as a floor in perspective, sliding past (the rig drives left, so
+  // the world moves right): a lit near edge, a dashed far lane line, a grid.
+  function floor(ctx, sc, s, centre, half, zw, move) {
+    sc.body();
+    var x0 = centre - half, x1 = centre + half, lane = (zw * 2) / 3;
+    var along = function (z, alpha, width) {
+      sc.pt(x0, 0, z); var ax = sc.X, ay = sc.Y;
+      sc.pt(x1, 0, z);
+      var g = ctx.createLinearGradient(ax, ay, sc.X, sc.Y);
+      g.addColorStop(0, "rgba(76, 201, 255, 0)");
+      g.addColorStop(0.2, "rgba(76, 201, 255, " + alpha + ")");
+      g.addColorStop(0.8, "rgba(76, 201, 255, " + alpha + ")");
+      g.addColorStop(1, "rgba(76, 201, 255, 0)");
+      ctx.strokeStyle = g;
+      ctx.lineWidth = width / s;
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(sc.X, sc.Y); ctx.stroke();
+    };
+    for (var i = -3; i <= 3; i++) {
+      if (i === -2) along(-lane, 0.14, 5);
+      along((i * zw) / 3, i === -2 ? 0.7 : 0.15, i === -2 ? 1.3 : 0.8);
+    }
+    var x, edge;
+    ctx.lineWidth = 0.8 / s;
+    for (x = x0 + (move % 50); x < x1; x += 50) {
+      edge = 1 - Math.abs(x - centre) / half;
+      ctx.strokeStyle = "rgba(76, 201, 255, " + 0.2 * edge + ")";
+      sc.pt(x, 0, -zw); ctx.beginPath(); ctx.moveTo(sc.X, sc.Y);
+      sc.pt(x, 0, zw); ctx.lineTo(sc.X, sc.Y); ctx.stroke();
+    }
+    ctx.lineWidth = 2.2 / s;
+    for (x = x0 - 70 + (move % 70); x < x1; x += 70) {
+      var from = Math.max(x, x0), to = Math.min(x + 30, x1);
+      if (to <= from) continue;
+      edge = 1 - Math.abs(x + 15 - centre) / half;
+      ctx.strokeStyle = "rgba(150, 220, 255, " + 0.6 * clamp01(edge * 1.4) + ")";
+      sc.pt(from, 0, lane); ctx.beginPath(); ctx.moveTo(sc.X, sc.Y);
+      sc.pt(to, 0, lane); ctx.lineTo(sc.X, sc.Y); ctx.stroke();
     }
   }
 
-  function wheels(ctx, spin) {
-    WHEELS.forEach(function (w) { wheel(ctx, w, spin); });
+  // Dust lifting off the back wheels (sources are [x, z] where a tyre meets the road).
+  function dust(ctx, sc, s, motes, time, sources, alpha) {
+    sc.body();
+    ctx.fillStyle = "rgb(150, 210, 255)";
+    motes.forEach(function (d, i) {
+      var src = sources[i % sources.length], p = (d.p + time * d.v * 0.5) % 1;
+      sc.pt(src[0] + 14 + p * 170, -3 - p * (10 + d.a * 34), src[1] + (d.b - 0.5) * 50 * p);
+      ctx.globalAlpha = alpha * (1 - p) * 0.55;
+      var size = (1.6 + p * 2.2) / s;
+      ctx.fillRect(sc.X, sc.Y, size, size);
+    });
+    ctx.globalAlpha = alpha;
+  }
+
+  // Air rushing past on either side of the rig.
+  function streaks(ctx, sc, s, motes, time, centre, half, height, alpha) {
+    sc.body();
+    ctx.strokeStyle = "rgb(170, 225, 255)";
+    ctx.lineWidth = 1 / s;
+    motes.forEach(function (d) {
+      var p = (d.p + time * d.v * 0.55) % 1, x = centre - half + p * 2 * half;
+      var y = -18 - d.a * height, z = (d.b < 0.5 ? -1 : 1) * (90 + d.b * 130), len = 30 + d.a * 60;
+      sc.pt(x, y, z); var ax = sc.X, ay = sc.Y;
+      sc.pt(x + len, y, z);
+      ctx.globalAlpha = alpha * Math.sin(Math.PI * p) * 0.4;
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(sc.X, sc.Y); ctx.stroke();
+    });
+    ctx.globalAlpha = alpha;
+  }
+
+  // The near side of a body, faintly filled, with hologram scan lines in it.
+  function fillFace(ctx, sc, s, outline, z, colour, shift) {
+    ctx.save();
+    ctx.beginPath(); sc.trace(outline[0], z);
+    var g = ctx.createLinearGradient(0, -155, 0, 0);
+    g.addColorStop(0, rgba(colour, 0.15));
+    g.addColorStop(1, rgba(colour, 0.03));
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.clip();
+    ctx.fillStyle = rgba(colour, 0.08);
+    for (var ly = -176 + (shift % 4); ly < 24; ly += 4) ctx.fillRect(-80, ly, 760, 1 / s);
+    ctx.restore();
+  }
+
+  function headlamps(ctx, sc, hw) {
+    [-(hw - 12), hw - 12].forEach(function (z) {
+      sc.pt(3, -56, z); var ax = sc.X, ay = sc.Y;
+      sc.pt(-115, -84, z * 1.4); var bx = sc.X, by = sc.Y;
+      sc.pt(-115, -4, z * 1.4);
+      var g = ctx.createLinearGradient(ax, ay, (bx + sc.X) / 2, (by + sc.Y) / 2);
+      g.addColorStop(0, "rgba(215, 240, 255, 0.2)");
+      g.addColorStop(1, "rgba(215, 240, 255, 0)");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(sc.X, sc.Y); ctx.closePath(); ctx.fill();
+    });
+  }
+
+  // Puts the whole rig into the scene: o = { time, moving, type, trailer, ci },
+  // where ci gives the palette index for each part. The caller flushes.
+  function rig3d(ctx, sc, s, o) {
+    var t = o.time, ci = o.ci, hw = HALF_WIDTH[o.type], body = modelFor(o.type);
+    var lf = o.moving ? bump(t) : 0, lr = o.moving ? bump(t - 1.21) : 0, lt = o.moving ? bump(t - 3.13) : 0;
+    var rise = -lf * 0.8, lean = (-(lr - lf) * 0.8) / 170;
+    var ball = rise + (334 - 62) * lean;
+    var spin = o.moving ? -t * 5 : 0, shift = o.moving ? t * 12 : 0;
+
+    sc.body(62, rise, lean);
+    fillFace(ctx, sc, s, body.outline, -hw, sc.palette[ci.vehicle], shift);
+    if (o.lamps) headlamps(ctx, sc, hw);
+    sc.extrude(body.outline, hw, ci.vehicle, 0.9, 0.3, 0.42);
+    sc.polys(body.details, -hw, ci.vehicle, 0.6);
+    sc.polys(body.details, hw, ci.vehicle, 0.14);
+    if (o.trailer) {
+      sc.seg(302, -36, 0, 330, -36, 0, ci.towball, 0.95);
+      sc.ring(334, -40, 0, 4.5, 10, ci.towball, 0.95);
+
+      var van = modelFor("caravan");
+      sc.body(334, ball, (-lt * 0.8 - ball) / 166);
+      fillFace(ctx, sc, s, van.outline, -CARAVAN_HALF, sc.palette[ci.trailer], shift);
+      sc.extrude(van.outline, CARAVAN_HALF, ci.trailer, 0.9, 0.3, 0.42);
+      sc.polys(van.details, -CARAVAN_HALF, ci.trailer, 0.6);
+      sc.polys(van.details, CARAVAN_HALF, ci.trailer, 0.14);
+      // A-frame drawbar and jockey wheel
+      sc.seg(334, -40, 0, 392, -38, -44, ci.towball, 0.85);
+      sc.seg(334, -40, 0, 392, -38, 44, ci.towball, 0.6);
+      sc.seg(372, -39, 0, 372, -15, 0, ci.towball, 0.8);
+      sc.ring(372, -10, 0, 5, 10, ci.towball, 0.8);
+    }
+
+    sc.body();
+    [[WHEELS[0], hw, lf, ci.front], [WHEELS[1], hw, lr, ci.rear], [WHEELS[2], CARAVAN_HALF, lt, ci.trailerAxles]].forEach(function (q, i) {
+      if (i === 2 && !o.trailer) return;
+      var w = q[0], out = q[1] - 3;
+      sc.wheel(w.x, w.r, -out, -out + 17, q[2], spin, q[3], 0.9);
+      sc.wheel(w.x, w.r, out, out - 17, q[2], spin, q[3], 0.3);
+    });
   }
 
   function setUpHologram() {
@@ -191,8 +483,7 @@
 
     var w = 0, h = 0, s = 1, ox = 0, gy = 0, fade = 1, labels = true;
     var mx = 0, my = 0, tx = 0, ty = 0;
-    var dust = [];
-    for (var i = 0; i < 26; i++) dust.push({ p: Math.random(), y: -4 - Math.random() * 40, v: 0.25 + Math.random() * 0.5 });
+    var dust_motes = makeMotes(28);
 
     function resize() {
       var rect = header.getBoundingClientRect();
@@ -205,7 +496,7 @@
       var contentRight = (w + Math.min(w, 1120)) / 2;
       var room = Math.min(w - 24, contentRight + 140) - textRight - 30;
       if (room > 300) {
-        s = Math.min(room / 690, (h - 36) / 300);
+        s = Math.min(room / 730, (h - 36) / 300);
         ox = textRight + 30 + (room - 600 * s) / 2;
         gy = h - 46 * s - 24;
         fade = 1; labels = true;
@@ -218,154 +509,104 @@
       }
     }
 
-    function stroke(colour, width, blur) {
-      ctx.strokeStyle = colour;
-      ctx.lineWidth = width / s;
-      ctx.shadowColor = "rgba(76, 201, 255, 0.9)";
-      ctx.shadowBlur = blur;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-
-    function drawRig(time, colour, width, blur) {
-      var bob = Math.sin(time * 7) * 0.7, lag = Math.sin(time * 7 - 0.9) * 0.7;
-      ctx.save(); ctx.translate(0, bob);
-      ctx.beginPath(); bakkie(ctx); stroke(colour, width, blur);
-      ctx.restore();
-      ctx.save(); ctx.translate(0, lag);
-      ctx.beginPath(); caravan(ctx); stroke(colour, width, blur);
-      ctx.restore();
-      ctx.save(); ctx.translate(0, (bob + lag) / 2);
-      ctx.beginPath(); details(ctx); stroke(colour, width * 0.75, blur * 0.6);
-      ctx.restore();
-      ctx.beginPath(); wheels(ctx, -time * 5); stroke(colour, width * 0.9, blur * 0.8);
-    }
+    var sc = Scene(ctx);
+    sc.palette = [NEUTRAL];
+    var CI = { vehicle: 0, towball: 0, trailer: 0, front: 0, rear: 0, trailerAxles: 0 };
+    var TAG_Z = [-49, -49, 0, -57];
+    var REAR_TYRES = [[232, -49], [232, 49], [500, -57], [500, 57]];
+    var wind = makeMotes(12);
 
     function frame(t) {
       var time = t / 1000;
       ctx.clearRect(0, 0, w, h);
       tx += (mx - tx) * 0.05; ty += (my - ty) * 0.05;
+      var phase = reduceMotion ? SWEEP + 0.6 : time % CYCLE;
+      var beamX = -40 + (phase / SWEEP) * 680;
+      var out = phase > CYCLE - 0.45 ? (CYCLE - phase) / 0.45 : 1;
 
       ctx.save();
-      ctx.translate(ox + tx * 10, gy + ty * 6);
+      ctx.translate(ox, gy);
       ctx.scale(s, s);
       ctx.globalAlpha = fade;
+      // The rig turns slowly from side-on to three-quarter view, and leans
+      // towards the pointer.
+      sc.camera(300, reduceMotion ? -0.3 : -0.18 + 0.32 * Math.sin(time * 0.33) + tx * 0.5, 0.2 + ty * 0.14);
 
       // Light pooled under the rig.
       var pool = ctx.createRadialGradient(300, -40, 10, 300, -40, 360);
       pool.addColorStop(0, "rgba(47, 107, 255, 0.22)");
       pool.addColorStop(1, "rgba(47, 107, 255, 0)");
       ctx.fillStyle = pool;
-      ctx.fillRect(-80, -260, 760, 330);
+      ctx.fillRect(-100, -420, 800, 800);
 
-      // The road: a lit line, lane dashes and a floor grid sliding past (the rig
-      // drives left, so the world moves right).
-      var road = ctx.createLinearGradient(-120, 0, 720, 0);
-      road.addColorStop(0, "rgba(76, 201, 255, 0)");
-      road.addColorStop(0.2, "rgba(76, 201, 255, 0.7)");
-      road.addColorStop(0.8, "rgba(76, 201, 255, 0.7)");
-      road.addColorStop(1, "rgba(76, 201, 255, 0)");
-      ctx.beginPath(); ctx.moveTo(-120, 0); ctx.lineTo(720, 0);
-      ctx.strokeStyle = road; ctx.lineWidth = 1.2 / s;
-      ctx.shadowColor = "rgba(76, 201, 255, 0.9)"; ctx.shadowBlur = 8; ctx.stroke(); ctx.shadowBlur = 0;
-      var shift = (time * 140) % 60;
-      ctx.strokeStyle = "rgba(76, 201, 255, 0.35)";
-      ctx.lineWidth = 2 / s;
-      ctx.beginPath();
-      for (var x = -120 + shift; x < 720; x += 60) { ctx.moveTo(x, 12); ctx.lineTo(x + 26, 12); }
-      ctx.stroke();
-      ctx.lineWidth = 0.8 / s;
-      var gshift = (time * 140) % 40;
-      for (var gx = -160 + gshift; gx < 760; gx += 40) {
-        var edge = 1 - Math.min(1, Math.abs(gx - 300) / 440);
-        ctx.strokeStyle = "rgba(76, 201, 255, " + (0.22 * edge) + ")";
-        ctx.beginPath(); ctx.moveTo(gx, 2); ctx.lineTo(300 + (gx - 300) * 1.6, 46); ctx.stroke();
+      floor(ctx, sc, s, 300, 420, 150, reduceMotion ? 0 : time * 140);
+      if (!reduceMotion) {
+        dust(ctx, sc, s, dust_motes, time, REAR_TYRES, fade);
+        streaks(ctx, sc, s, wind, time, 300, 420, 120, fade);
       }
-      [20, 32, 46].forEach(function (y, k) {
-        ctx.strokeStyle = "rgba(76, 201, 255, " + (0.16 - k * 0.04) + ")";
-        ctx.beginPath(); ctx.moveTo(-100, y); ctx.lineTo(700, y); ctx.stroke();
-      });
 
-      // Dust thrown up behind the caravan.
-      ctx.fillStyle = "rgb(150, 210, 255)";
-      dust.forEach(function (d) {
-        var p = (d.p + time * d.v * 0.4) % 1;
-        ctx.globalAlpha = fade * (1 - p) * 0.6;
-        ctx.fillRect(600 + p * 160, d.y - p * 10, 2 / s, 2 / s);
-      });
-      ctx.globalAlpha = fade;
+      // The rig in light: dim until the scan beam has passed over it, white
+      // hot right behind the beam.
+      sc.lit = function (x) { return 0.5 + 0.5 * clamp01((beamX - x) / 40) * out; };
+      sc.hot = phase < SWEEP ? function (x) { var d = beamX - x; return d < 0 || d > 90 ? 0 : 1 - d / 90; } : null;
+      rig3d(ctx, sc, s, { time: time, moving: !reduceMotion, type: "goodsVehicle", trailer: true, lamps: true, ci: CI });
+      ctx.globalCompositeOperation = "lighter";
+      sc.flush(s, 1.4);
+      ctx.globalCompositeOperation = "source-over";
 
-      // Faint body fill, then the rig in light.
-      ctx.save();
-      ctx.beginPath(); bakkie(ctx); caravan(ctx);
-      var body = ctx.createLinearGradient(0, -150, 0, 0);
-      body.addColorStop(0, "rgba(76, 201, 255, 0.10)");
-      body.addColorStop(1, "rgba(76, 201, 255, 0.02)");
-      ctx.fillStyle = body;
-      ctx.fill();
-      // hologram scan lines inside the body
-      ctx.clip();
-      ctx.fillStyle = "rgba(160, 225, 255, 0.07)";
-      var lineShift = (time * 12) % 4;
-      for (var ly = -150 + lineShift; ly < 0; ly += 4) ctx.fillRect(0, ly, 600, 1 / s);
-      ctx.restore();
-      drawRig(time, "rgba(76, 201, 255, 0.75)", 1.4, 6);
-
-      // The scan beam, and the band it has just lit.
-      var phase = reduceMotion ? SWEEP + 0.6 : time % CYCLE;
-      var beamX = -40 + (phase / SWEEP) * 680;
+      // The scan beam: a sheet of light across the road, moving down the rig.
+      sc.body();
       if (phase < SWEEP) {
-        [[70, "rgba(130, 220, 255, 0.55)", 1.6, 8], [16, "rgba(235, 250, 255, 0.95)", 1.8, 12]].forEach(function (band) {
-          ctx.save();
-          ctx.beginPath(); ctx.rect(beamX - band[0], -170, band[0], 220); ctx.clip();
-          drawRig(time, band[1], band[2], band[3]);
-          ctx.restore();
-        });
-        var beam = ctx.createLinearGradient(beamX - 26, 0, beamX + 4, 0);
-        beam.addColorStop(0, "rgba(76, 201, 255, 0)");
-        beam.addColorStop(1, "rgba(76, 201, 255, 0.28)");
-        ctx.fillStyle = beam;
-        ctx.fillRect(beamX - 26, -170, 30, 216);
-        ctx.fillStyle = "rgba(220, 245, 255, 0.95)";
+        ctx.beginPath();
+        sc.pt(beamX, 14, -95); ctx.moveTo(sc.X, sc.Y);
+        sc.pt(beamX, -180, -95); ctx.lineTo(sc.X, sc.Y);
+        sc.pt(beamX, -180, 95); ctx.lineTo(sc.X, sc.Y);
+        sc.pt(beamX, 14, 95); ctx.lineTo(sc.X, sc.Y);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(76, 201, 255, 0.1)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(220, 245, 255, 0.9)";
+        ctx.lineWidth = 1.4 / s;
         ctx.shadowColor = "rgba(76, 201, 255, 1)"; ctx.shadowBlur = 14;
-        ctx.fillRect(beamX, -170, 1.6 / s, 216);
+        ctx.stroke();
         ctx.shadowBlur = 0;
       }
 
       // Tags: each appears as the beam passes, then fades before the next sweep.
       if (labels) {
-        var out = phase > CYCLE - 0.45 ? (CYCLE - phase) / 0.45 : 1;
         ctx.font = "600 " + (10.5 / s) + "px Inter, system-ui, sans-serif";
         if ("letterSpacing" in ctx) ctx.letterSpacing = (1.6 / s) + "px";
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
-        TAGS.forEach(function (tag) {
-          var a = Math.max(0, Math.min(1, (beamX - tag.x) / 50)) * out;
+        TAGS.forEach(function (tag, i) {
+          var a = clamp01((beamX - tag.x) / 50) * out;
           if (a <= 0) return;
-          var top = tag.row ? -214 : -188;
+          sc.pt(tag.x, tag.y, TAG_Z[i]);
+          var px = sc.X, py = sc.Y;
+          var top = tag.row ? -218 : -192;
           ctx.globalAlpha = fade * a;
           // leader: a dashed line down to the point, with an arrowhead
           ctx.strokeStyle = "rgba(76, 201, 255, 0.8)";
           ctx.lineWidth = 1 / s;
           ctx.setLineDash([3 / s, 3 / s]);
-          ctx.beginPath(); ctx.moveTo(tag.x, top + 14); ctx.lineTo(tag.x, tag.y - 6); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(px, top + 14); ctx.lineTo(px, py - 6); ctx.stroke();
           ctx.setLineDash([]);
           ctx.fillStyle = "rgba(76, 201, 255, 0.95)";
-          ctx.beginPath(); ctx.moveTo(tag.x - 4, tag.y - 10); ctx.lineTo(tag.x + 4, tag.y - 10); ctx.lineTo(tag.x, tag.y - 3); ctx.closePath(); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(px - 4, py - 10); ctx.lineTo(px + 4, py - 10); ctx.lineTo(px, py - 3); ctx.closePath(); ctx.fill();
           // a ring that pulses on the point
           var ring = (time * 1.4 + tag.x / 200) % 1;
           ctx.strokeStyle = "rgba(160, 230, 255, " + (1 - ring) * 0.8 + ")";
-          ctx.beginPath(); ctx.arc(tag.x, tag.y, 3 + ring * 9, 0, Math.PI * 2); ctx.stroke();
+          ctx.beginPath(); ctx.arc(px, py, 3 + ring * 9, 0, Math.PI * 2); ctx.stroke();
           // the label and a small meter that fills
           ctx.fillStyle = "rgba(225, 242, 255, 0.95)";
           ctx.shadowColor = "rgba(76, 201, 255, 0.9)"; ctx.shadowBlur = 8;
-          ctx.fillText(tag.label, tag.x, top);
+          ctx.fillText(tag.label, px, top);
           ctx.shadowBlur = 0;
           var mw = 54, fill = tag.fill * Math.min(1, (beamX - tag.x) / 140);
           ctx.fillStyle = "rgba(76, 201, 255, 0.18)";
-          ctx.fillRect(tag.x - mw / 2, top + 4, mw, 3);
+          ctx.fillRect(px - mw / 2, top + 4, mw, 3);
           ctx.fillStyle = "rgba(76, 201, 255, 0.95)";
-          ctx.fillRect(tag.x - mw / 2, top + 4, mw * fill, 3);
+          ctx.fillRect(px - mw / 2, top + 4, mw * fill, 3);
         });
         ctx.globalAlpha = fade;
 
@@ -457,7 +698,10 @@
   }
 
   var rigLive = (function () {
-    var canvas = null, ctx = null, data = null, shown = {};
+    var canvas = null, ctx = null, sc = null, data = null, shown = {};
+    var LIVE_CI = { vehicle: 0, towball: 1, trailer: 2, front: 3, rear: 4, trailerAxles: 5 };
+    var REAR_TYRES = [[232, -49], [232, 49], [500, -57], [500, 57]];
+    var motes = makeMotes(24), wind = makeMotes(10);
     var w = 0, h = 0, s = 1, running = false, visible = false, raf = 0, last = 0;
 
     function setUp() {
@@ -466,6 +710,7 @@
       canvas.setAttribute("role", "img");
       canvas.setAttribute("aria-label", "Side view of the rig with the mass on each axle, the tow ball, the vehicle, the trailer and the whole rig, coloured by how close each is to its limit. The same figures are in the table below.");
       ctx = canvas.getContext("2d");
+      sc = Scene(ctx);
       if ("ResizeObserver" in window) new ResizeObserver(function () { if (resize()) still(); }).observe(canvas);
       if ("IntersectionObserver" in window) {
         new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; update(); }).observe(canvas);
@@ -530,15 +775,6 @@
       return weight + " " + px / s + "px " + family;
     }
 
-    function stroke(colour, width, blur) {
-      ctx.strokeStyle = rgba(colour, 0.85);
-      ctx.lineWidth = width / s;
-      ctx.shadowColor = rgba(colour, 0.9);
-      ctx.shadowBlur = blur;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-
     function draw(t, snap) {
       if (!data || !w || !canvas.isConnected) return;
       var time = t / 1000;
@@ -574,68 +810,23 @@
       ctx.fillStyle = pool;
       ctx.fillRect(centre - SW / 2, TOP, SW, SH);
 
-      // The road sliding past (the rig drives left, so the world moves right).
-      var L = centre - SW / 2, R = centre + SW / 2;
-      var road = ctx.createLinearGradient(L, 0, R, 0);
-      road.addColorStop(0, "rgba(76, 201, 255, 0)");
-      road.addColorStop(0.15, "rgba(76, 201, 255, 0.6)");
-      road.addColorStop(0.85, "rgba(76, 201, 255, 0.6)");
-      road.addColorStop(1, "rgba(76, 201, 255, 0)");
-      ctx.beginPath(); ctx.moveTo(L, 0); ctx.lineTo(R, 0);
-      ctx.strokeStyle = road; ctx.lineWidth = 1.2 / s;
-      ctx.shadowColor = "rgba(76, 201, 255, 0.9)"; ctx.shadowBlur = 8; ctx.stroke(); ctx.shadowBlur = 0;
-      var move = reduceMotion ? 0 : time * 140;
-      ctx.strokeStyle = "rgba(76, 201, 255, 0.3)";
-      ctx.lineWidth = 2 / s;
-      ctx.beginPath();
-      for (var x = L - 60 + (move % 60); x < R; x += 60) { ctx.moveTo(x, 12); ctx.lineTo(x + 26, 12); }
-      ctx.stroke();
-      ctx.lineWidth = 0.8 / s;
-      for (var gx = L - 40 + (move % 40); gx < R; gx += 40) {
-        var edge = 1 - Math.min(1, Math.abs(gx - centre) / (SW / 2));
-        ctx.strokeStyle = "rgba(76, 201, 255, " + 0.16 * edge + ")";
-        ctx.beginPath(); ctx.moveTo(gx, 2); ctx.lineTo(centre + (gx - centre) * 1.3, 30); ctx.stroke();
+      // The camera sits a little ahead of the rig and above it, and sways
+      // gently, so the rig has depth but every figure stays over its part.
+      var mt = reduceMotion ? 0 : time;
+      sc.camera(centre, -0.17 + (reduceMotion ? 0 : 0.05 * Math.sin(time * 0.45)), 0.14);
+      floor(ctx, sc, s, centre, SW / 2, 120, mt * 140);
+      if (!reduceMotion) {
+        dust(ctx, sc, s, motes, time, trailer ? REAR_TYRES : REAR_TYRES.slice(0, 2), 1);
+        streaks(ctx, sc, s, wind, time, centre, SW / 2, 110, 1);
       }
-      ctx.strokeStyle = "rgba(76, 201, 255, 0.1)";
-      ctx.beginPath(); ctx.moveTo(L, 24); ctx.lineTo(R, 24); ctx.stroke();
 
       // The rig, each part in its own colour.
-      var bob = reduceMotion ? 0 : Math.sin(time * 7) * 0.7, lag = reduceMotion ? 0 : Math.sin(time * 7 - 0.9) * 0.7;
-      var spin = reduceMotion ? 0 : -time * 5;
-      var fillBody = function (path, colour) {
-        ctx.save();
-        ctx.beginPath(); path(ctx);
-        var g = ctx.createLinearGradient(0, -155, 0, 0);
-        g.addColorStop(0, rgba(colour, 0.13));
-        g.addColorStop(1, rgba(colour, 0.02));
-        ctx.fillStyle = g;
-        ctx.fill();
-        ctx.clip();
-        ctx.fillStyle = rgba(colour, 0.08);
-        for (var ly = -156 + ((reduceMotion ? 0 : time * 12) % 4); ly < 0; ly += 4) ctx.fillRect(0, ly, 600, 1 / s);
-        ctx.restore();
-      };
-      var cV = part("vehicle"), cB = part("towball"), cT = part("trailer");
-      ctx.save(); ctx.translate(0, bob);
-      fillBody(BODIES[type], cV);
-      ctx.beginPath(); BODIES[type](ctx); stroke(cV, 1.6, 7);
-      ctx.beginPath(); vehicleDetails(ctx, type); stroke(cV, 1.1, 4);
-      if (trailer) { ctx.beginPath(); towbar(ctx); stroke(cB, 1.6, 8); }
-      ctx.restore();
-      if (trailer) {
-        ctx.save(); ctx.translate(0, lag);
-        fillBody(caravan, cT);
-        ctx.beginPath(); caravan(ctx); stroke(cT, 1.6, 7);
-        ctx.beginPath(); caravanDetails(ctx); stroke(cT, 1.1, 4);
-        ctx.restore();
-        ctx.save(); ctx.translate(0, (bob + lag) / 2);
-        ctx.beginPath(); hitch(ctx); stroke(cB, 1.3, 6);
-        ctx.restore();
-      }
-      [["front", WHEELS[0]], ["rear", WHEELS[1]], ["trailerAxles", WHEELS[2]]].forEach(function (pair) {
-        if (pair[0] === "trailerAxles" && !trailer) return;
-        ctx.beginPath(); wheel(ctx, pair[1], spin); stroke(part(pair[0]), 1.4, 6);
-      });
+      sc.palette = [part("vehicle"), part("towball"), part("trailer"), part("front"), part("rear"), part("trailerAxles")];
+      rig3d(ctx, sc, s, { time: mt, moving: !reduceMotion, type: type, trailer: trailer, lamps: !trailer, ci: LIVE_CI });
+      ctx.globalCompositeOperation = "lighter";
+      sc.flush(s, 1.6);
+      ctx.globalCompositeOperation = "source-over";
+      sc.body();
 
       // Figures.
       ctx.textAlign = "center";
@@ -700,11 +891,13 @@
           ctx.lineWidth = (flow ? 1.6 : 1) / s;
           ctx.setLineDash(flow ? [6 / s, 5 / s] : [3 / s, 4 / s]);
           ctx.lineDashOffset = flow && !reduceMotion ? -time * 26 / s : 0;
-          ctx.beginPath(); ctx.moveTo(it.x, topMeter + 10 / s); ctx.lineTo(it.x, it.to - 8); ctx.stroke();
+          sc.pt(it.x, it.to, 0);
+          var ax = sc.X, ay = sc.Y;
+          ctx.beginPath(); ctx.moveTo(it.x, topMeter + 10 / s); ctx.lineTo(ax, ay - 10); ctx.stroke();
           ctx.setLineDash([]);
           ctx.lineDashOffset = 0;
           ctx.fillStyle = rgba(c, 0.95);
-          ctx.beginPath(); ctx.moveTo(it.x - 5, it.to - 12); ctx.lineTo(it.x + 5, it.to - 12); ctx.lineTo(it.x, it.to - 3); ctx.closePath(); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(ax - 5, ay - 12); ctx.lineTo(ax + 5, ay - 12); ctx.lineTo(ax, ay - 3); ctx.closePath(); ctx.fill();
         } else {
           valueAt(it, it.x, lowValue);
           nameAt(it.name, it.x, lowName);
